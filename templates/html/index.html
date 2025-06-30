@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+
+{% block title %}Accueil - E-BOUEUR{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <!-- Logo principal -->
+        <div class="text-center d-flex flex-column justify-content-center" style="min-height: 90vh; margin-bottom: 3rem;">
+            <h1 class="mb-3" style="color: rgba(255, 255, 255, 0.95); font-weight: 600; font-size: 5rem;">
+                <i class="bi bi-recycle" style="color: var(--eco-light); margin-right: 0.5rem; font-size: 5rem;"></i>
+                E-BOUEUR
+            </h1>
+            <p class="lead text-muted">
+                Téléchargez vos images pour une analyse complète des caractéristiques :<br>
+                Couleurs, Contraste, Contours et Luminance
+            </p>
+        </div>
+
+        <!-- Carte d'upload -->
+        <div class="card mb-4">
+            <div class="card-header text-center">
+                <h3 class="mb-0">
+                    <span>Télécharger une Image</span>
+                    <i class="bi bi-cloud-upload"></i>
+                </h3>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('upload_file') }}" method="post" enctype="multipart/form-data" id="uploadForm">
+                    <div class="upload-zone" id="uploadZone">
+                        <i class="bi bi-cloud-arrow-up display-1 text-primary mb-3"></i>
+                        <h4>Glissez votre image ici</h4>
+                        <p class="text-muted mb-3">ou cliquez pour sélectionner un fichier</p>
+                        <input type="file" 
+                               name="file" 
+                               id="fileInput" 
+                               class="d-none" 
+                               accept=".png,.jpg,.jpeg,.gif,.bmp,.tiff"
+                               required>
+                        <div class="mt-3">
+                            <button type="button" class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
+                                <i class="bi bi-folder2-open"></i>
+                                Choisir un fichier
+                            </button>
+                        </div>
+                        <small class="text-muted d-block mt-2">
+                            Formats supportés: PNG, JPG, JPEG, GIF, BMP, TIFF (max 16MB)
+                        </small>
+                    </div>
+                    
+                    <!-- Aperçu de l'image sélectionnée -->
+                    <div id="imagePreview" class="mt-4 text-center" style="display: none;">
+                        <h5>Aperçu :</h5>
+                        <img id="previewImg" class="image-preview" style="max-height: 300px;">
+                        <div class="mt-3">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="bi bi-graph-up"></i>
+                                Analyser l'Image
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="resetForm()">
+                                <i class="bi bi-arrow-clockwise"></i>
+                                Changer d'image
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Informations sur les analyses -->
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">
+                    <span>Types d'Analyses Disponibles</span>
+                    <i class="bi bi-info-circle"></i>
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-palette text-primary fs-3 me-3"></i>
+                            <div>
+                                <h6 class="mb-1">Analyse des Couleurs</h6>
+                                <small class="text-muted">Couleurs moyennes RGB, luminosité globale</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-sliders text-primary fs-3 me-3"></i>
+                            <div>
+                                <h6 class="mb-1">Analyse du Contraste</h6>
+                                <small class="text-muted">Niveaux de contraste par canal et global</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-grid-3x3 text-success fs-3 me-3"></i>
+                            <div>
+                                <h6 class="mb-1">Détection de Contours</h6>
+                                <small class="text-muted">Algorithmes Canny et Sobel</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-brightness-high text-info fs-3 me-3"></i>
+                            <div>
+                                <h6 class="mb-1">Analyse de Luminance</h6>
+                                <small class="text-muted">Histogrammes et statistiques de luminance</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistiques de la plateforme -->
+<div class="row mt-5" id="statsRow">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <span>Statistiques de la Plateforme</span>
+                    <i class="bi bi-bar-chart"></i>
+                </h5>
+            </div>
+            <div class="card-body text-center">
+                <div class="row" id="statsContainer">
+                    <div class="col-md-3">
+                        <div class="metric-box">
+                            <div class="metric-value" id="totalImages">-</div>
+                            <div class="metric-label">Images Analysées</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="metric-box">
+                            <div class="metric-value" id="totalSize">-</div>
+                            <div class="metric-label">Taille Totale (MB)</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="metric-box">
+                            <div class="metric-value" id="avgWidth">-</div>
+                            <div class="metric-label">Largeur Moyenne</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="metric-box">
+                            <div class="metric-value" id="avgHeight">-</div>
+                            <div class="metric-label">Hauteur Moyenne</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const uploadZone = document.getElementById('uploadZone');
+    const fileInput = document.getElementById('fileInput');
+    const imagePreview = document.getElementById('imagePreview');
+    const previewImg = document.getElementById('previewImg');
+    const uploadForm = document.getElementById('uploadForm');
+
+    // Charger les statistiques
+    loadStats();
+
+    // Gestion du drag & drop
+    uploadZone.addEventListener('click', () => fileInput.click());
+    
+    uploadZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadZone.classList.add('dragover');
+    });
+    
+    uploadZone.addEventListener('dragleave', () => {
+        uploadZone.classList.remove('dragover');
+    });
+    
+    uploadZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadZone.classList.remove('dragover');
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            fileInput.files = files;
+            handleFileSelect();
+        }
+    });
+
+    // Gestion de la sélection de fichier
+    fileInput.addEventListener('change', handleFileSelect);
+
+    function handleFileSelect() {
+        const file = fileInput.files[0];
+        if (file) {
+            // Vérifier la taille du fichier (16MB max)
+            if (file.size > 16 * 1024 * 1024) {
+                alert('Le fichier est trop volumineux. Taille maximale : 16MB');
+                resetForm();
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImg.src = e.target.result;
+                imagePreview.style.display = 'block';
+                uploadZone.style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    // Fonction pour réinitialiser le formulaire
+    window.resetForm = function() {
+        fileInput.value = '';
+        imagePreview.style.display = 'none';
+        uploadZone.style.display = 'block';
+    };
+
+    async function loadStats() {
+        try {
+            const response = await fetch('/api/stats');
+            const stats = await response.json();
+            
+            // Mettre à jour les statistiques
+            document.getElementById('totalImages').textContent = stats.total_images;
+            document.getElementById('totalSize').textContent = stats.total_size_mb.toFixed(1);
+            document.getElementById('avgWidth').textContent = Math.round(stats.avg_width) + ' px';
+            document.getElementById('avgHeight').textContent = Math.round(stats.avg_height) + ' px';
+        } catch (error) {
+            console.error('Erreur lors du chargement des statistiques:', error);
+            // Valeurs par défaut en cas d'erreur
+            document.getElementById('totalImages').textContent = '0';
+            document.getElementById('totalSize').textContent = '0.0';
+            document.getElementById('avgWidth').textContent = '0 px';
+            document.getElementById('avgHeight').textContent = '0 px';
+        }
+    }
+});
+</script>
+{% endblock %} 

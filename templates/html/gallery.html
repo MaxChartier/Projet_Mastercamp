@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block title %}Galerie - E-BOUEUR{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Accueil</a></li>
+                <li class="breadcrumb-item active">Galerie</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="mb-0">
+                    <span>Galerie des Images Analysées</span>
+                    <i class="bi bi-grid"></i>
+                </h3>
+            </div>
+            <div class="card-body">
+                {% if images|length > 0 %}
+                    <div class="row" id="galleryGrid">
+                        {% for image in images %}
+                            <div class="col-lg-3 col-md-4 col-sm-6 mb-4 gallery-item">
+                                <div class="card h-100">
+                                    <img src="{{ url_for('static', filename='uploads/' + image.filename) }}" 
+                                         class="card-img-top" 
+                                         style="height: 200px; object-fit: cover;">
+                                    <div class="card-body d-flex flex-column">
+                                        <h6 class="card-title text-truncate">{{ image.filename }}</h6>
+                                        
+                                        <div class="mb-2">
+                                            <span class="badge badge-glassmorphism">
+                                                {{ image.image_mode.upper() }}
+                                            </span>
+                                        </div>
+                                        
+                                        <div class="row text-center mb-3">
+                                            <div class="col-6">
+                                                <small class="text-muted">Taille</small><br>
+                                                <strong>{{ "%.1f"|format(image.file_size_ko) }} Ko</strong>
+                                            </div>
+                                            <div class="col-6">
+                                                <small class="text-muted">Résolution</small><br>
+                                                <strong>{{ image.width }}×{{ image.height }}</strong>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="mt-auto">
+                                            <a href="{{ url_for('view_analysis', image_id=image.id) }}" 
+                                               class="btn btn-primary btn-sm w-100">
+                                                <i class="bi bi-eye"></i>
+                                                Voir l'Analyse
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="bi bi-images display-1 text-muted mb-3"></i>
+                        <h4 class="text-muted">Aucune image analysée</h4>
+                        <p class="text-muted">Commencez par télécharger et analyser votre première image.</p>
+                        <a href="{{ url_for('index') }}" class="btn btn-primary">
+                            <i class="bi bi-cloud-upload"></i>
+                            Télécharger une Image
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistiques -->
+{% if images|length > 0 %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <span>Statistiques de la Galerie</span>
+                    <i class="bi bi-bar-chart"></i>
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <div class="stats-card card">
+                            <div class="card-body">
+                                <h4 class="text-primary">{{ images|length }}</h4>
+                                <p class="mb-0 text-muted">Images Totales</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stats-card card">
+                            <div class="card-body">
+                                <h4 class="text-success">{{ "%.1f"|format(total_size) }} MB</h4>
+                                <p class="mb-0 text-muted">Taille Totale</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stats-card card">
+                            <div class="card-body">
+                                <h4 class="text-info">{{ avg_resolution }}</h4>
+                                <p class="mb-0 text-muted">Résolution Moyenne</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stats-card card">
+                            <div class="card-body">
+                                <h4 class="text-warning">{{ most_common_mode.upper() }}</h4>
+                                <p class="mb-0 text-muted">Mode le Plus Fréquent</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Aucun script spécial nécessaire pour la galerie
+    console.log('Galerie chargée avec {{ images|length }} images');
+});
+</script>
+{% endblock %} 
