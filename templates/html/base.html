@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="{{ lang }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,24 +16,33 @@
     <!-- Navigation -->
     <nav class="navbar navbar-dark">
         <div class="container">
-            <a class="navbar-brand" href="{{ url_for('index') }}">
-                <i class="bi bi-recycle"></i>
-                E-BOUEUR
-            </a>
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <!-- Language Switcher Flags -->
+                <a href="{{ url_for('set_language', lang='fr') }}">
+                    <img src="https://flagcdn.com/fr.svg" alt="Français" width="28" style="border-radius: 50%; border: 2px solid {% if lang == 'fr' %}#22c55e{% else %}#ccc{% endif %};">
+                </a>
+                <a href="{{ url_for('set_language', lang='en') }}">
+                    <img src="https://flagcdn.com/gb.svg" alt="English" width="28" style="border-radius: 50%; border: 2px solid {% if lang == 'en' %}#22c55e{% else %}#ccc{% endif %};">
+                </a>
+                <a class="navbar-brand" href="{{ url_for('index') }}">
+                    <i class="bi bi-recycle"></i>
+                    E-BOUEUR
+                </a>
+            </div>
             <ul class="navbar-nav">
                 <li class="nav-item">
                     <a class="nav-link" href="{{ url_for('index') }}">
-                        <i class="bi bi-house"></i> Accueil
+                        <i class="bi bi-house"></i> {{ _('Accueil') }}
                     </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="{{ url_for('gallery') }}">
-                        <i class="bi bi-grid"></i> Galerie
+                        <i class="bi bi-grid"></i> {{ _('Galerie') }}
                     </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="{{ url_for('map_view') }}">
-                        <i class="bi bi-geo-alt"></i> Carte
+                        <i class="bi bi-geo-alt"></i> {{ _('Carte') }}
                     </a>
                 </li>
             </ul>
@@ -109,4 +118,4 @@
     </script>
     {% block scripts %}{% endblock %}
 </body>
-</html> 
+</html>

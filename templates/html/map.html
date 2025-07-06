@@ -1,14 +1,14 @@
 {% extends "base.html" %}
 
-{% block title %}Carte - E-BOUEUR{% endblock %}
+{% block title %}{{ _('Carte') }} - E-BOUEUR{% endblock %}
 
 {% block content %}
 <div class="row">
     <div class="col-12">
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Accueil</a></li>
-                <li class="breadcrumb-item active">Carte</li>
+                <li class="breadcrumb-item"><a href="{{ url_for('index') }}">{{ _('Accueil') }}</a></li>
+                <li class="breadcrumb-item active">{{ _('Carte') }}</li>
             </ol>
         </nav>
     </div>
@@ -20,7 +20,7 @@
         <div class="card">
             <div class="card-header">
                 <h3 class="mb-0">
-                    <span>Carte Interactive des Poubelles</span>
+                    <span>{{ _('Carte Interactive des Poubelles') }}</span>
                     <i class="bi bi-geo-alt"></i>
                 </h3>
             </div>
@@ -55,6 +55,15 @@ document.addEventListener('DOMContentLoaded', function() {
     
     var trashLocations = {{ trash_locations | tojsonfilter | safe }};
     
+    // Translation dictionary for JS (from Flask context)
+    var jsTrans = {
+        address: "{{ _('Adresse:') }}",
+        type: "{{ _('Type:') }}",
+        status: "{{ _('État:') }}",
+        lastCollection: "{{ _('Dernière collecte:') }}",
+        yourPosition: "{{ _('Votre position') }}"
+    };
+    
     for (var i = 0; i < trashLocations.length; i++) {
         var location = trashLocations[i];
         var statusColor = location.status === 'Propre' ? '#22c55e' : '#ef4444';
@@ -65,16 +74,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 location.name +
             '</h6>' +
             '<p style="margin-bottom: 6px; font-size: 13px;">' +
-                '<strong>Adresse:</strong> ' + location.address +
+                '<strong>' + jsTrans.address + '</strong> ' + location.address +
             '</p>' +
             '<p style="margin-bottom: 6px; font-size: 13px;">' +
-                '<strong>Type:</strong> ' + location.type +
+                '<strong>' + jsTrans.type + '</strong> ' + location.type +
             '</p>' +
             '<p style="margin-bottom: 6px; font-size: 13px;">' +
-                '<strong>État:</strong> <span style="color: ' + statusColor + ';">' + location.status + '</span>' +
+                '<strong>' + jsTrans.status + '</strong> <span style="color: ' + statusColor + ';">' + location.status + '</span>' +
             '</p>' +
             '<p style="margin-bottom: 0; font-size: 13px;">' +
-                '<strong>Dernière collecte:</strong> ' + location.lastCollection +
+                '<strong>' + jsTrans.lastCollection + '</strong> ' + location.lastCollection +
             '</p>' +
         '</div>';
         
@@ -97,7 +106,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     map.setView([lat, lng], 15);
                     
                     L.marker([lat, lng]).addTo(map)
-                        .bindPopup('Votre position')
+                        .bindPopup(jsTrans.yourPosition)
                         .openPopup();
                 });
             }
@@ -108,4 +117,4 @@ document.addEventListener('DOMContentLoaded', function() {
     geoControl.addTo(map);
 });
 </script>
-{% endblock %} 
+{% endblock %}
