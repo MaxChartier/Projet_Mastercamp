@@ -1,0 +1,7 @@
+train : c:\Mastercamp-data\Projet_Mastercamp\machinelearning\train
+val : c:\Mastercamp-data\Projet_Mastercamp\machinelearning\val
+test : c:\Mastercamp-data\Projet_Mastercamp\machinelearning\test
+nc : 2
+names : ['clean', 'dirty']
+task : classification
+mode: train
