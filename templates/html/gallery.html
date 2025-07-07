@@ -1,14 +1,14 @@
 {% extends "base.html" %}
 
-{% block title %}Galerie - E-BOUEUR{% endblock %}
+{% block title %}{{ _('Galerie') }} - E-BOUEUR{% endblock %}
 
 {% block content %}
 <div class="row">
     <div class="col-12">
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Accueil</a></li>
-                <li class="breadcrumb-item active">Galerie</li>
+                <li class="breadcrumb-item"><a href="{{ url_for('index') }}">{{ _('Accueil') }}</a></li>
+                <li class="breadcrumb-item active">{{ _('Galerie') }}</li>
             </ol>
         </nav>
     </div>
@@ -19,7 +19,7 @@
         <div class="card">
             <div class="card-header">
                 <h3 class="mb-0">
-                    <span>Galerie des Images Analysées</span>
+                    <span>{{ _('Galerie des Images Analysées') }}</span>
                     <i class="bi bi-grid"></i>
                 </h3>
             </div>
@@ -28,35 +28,41 @@
                     <div class="row" id="galleryGrid">
                         {% for image in images %}
                             <div class="col-lg-3 col-md-4 col-sm-6 mb-4 gallery-item">
-                                <div class="card h-100">
+                                <div class="card h-100 position-relative">
+                                    <!-- Delete button (top left, absolute, sober style) -->
+                                    <form method="post" action="{{ url_for('delete_image', image_id=image.id) }}" 
+                                          style="position: absolute; top: 10px; left: 10px; z-index: 2;"
+                                          onsubmit="return confirm('{{ _('Supprimer cette image ?') }}');">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger p-1" 
+                                                style="border-radius: 50%; background: rgba(0,0,0,0.10); border: none;">
+                                            <i class="bi bi-x-lg" style="font-size: 1.1rem;"></i>
+                                        </button>
+                                    </form>
                                     <img src="{{ url_for('static', filename='uploads/' + image.filename) }}" 
                                          class="card-img-top" 
                                          style="height: 200px; object-fit: cover;">
                                     <div class="card-body d-flex flex-column">
                                         <h6 class="card-title text-truncate">{{ image.filename }}</h6>
-                                        
                                         <div class="mb-2">
                                             <span class="badge badge-glassmorphism">
                                                 {{ image.image_mode.upper() }}
                                             </span>
                                         </div>
-                                        
                                         <div class="row text-center mb-3">
                                             <div class="col-6">
-                                                <small class="text-muted">Taille</small><br>
+                                                <small class="text-muted">{{ _('Taille') }}</small><br>
                                                 <strong>{{ "%.1f"|format(image.file_size_ko) }} Ko</strong>
                                             </div>
                                             <div class="col-6">
-                                                <small class="text-muted">Résolution</small><br>
+                                                <small class="text-muted">{{ _('Résolution') }}</small><br>
                                                 <strong>{{ image.width }}×{{ image.height }}</strong>
                                             </div>
                                         </div>
-                                        
-                                        <div class="mt-auto">
+                                        <div class="mt-auto d-flex gap-2">
                                             <a href="{{ url_for('view_analysis', image_id=image.id) }}" 
                                                class="btn btn-primary btn-sm w-100">
                                                 <i class="bi bi-eye"></i>
-                                                Voir l'Analyse
+                                                {{ _('Voir l\'Analyse') }}
                                             </a>
                                         </div>
                                     </div>
@@ -67,11 +73,11 @@
                 {% else %}
                     <div class="text-center py-5">
                         <i class="bi bi-images display-1 text-muted mb-3"></i>
-                        <h4 class="text-muted">Aucune image analysée</h4>
-                        <p class="text-muted">Commencez par télécharger et analyser votre première image.</p>
+                        <h4 class="text-muted">{{ _('Aucune image analysée') }}</h4>
+                        <p class="text-muted">{{ _('Commencez par télécharger et analyser votre première image.') }}</p>
                         <a href="{{ url_for('index') }}" class="btn btn-primary">
                             <i class="bi bi-cloud-upload"></i>
-                            Télécharger une Image
+                            {{ _('Télécharger une Image') }}
                         </a>
                     </div>
                 {% endif %}
@@ -87,7 +93,7 @@
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0">
-                    <span>Statistiques de la Galerie</span>
+                    <span>{{ _('Statistiques de la Galerie') }}</span>
                     <i class="bi bi-bar-chart"></i>
                 </h5>
             </div>
@@ -97,7 +103,7 @@
                         <div class="stats-card card">
                             <div class="card-body">
                                 <h4 class="text-primary">{{ images|length }}</h4>
-                                <p class="mb-0 text-muted">Images Totales</p>
+                                <p class="mb-0 text-muted">{{ _('Images Totales') }}</p>
                             </div>
                         </div>
                     </div>
@@ -105,7 +111,7 @@
                         <div class="stats-card card">
                             <div class="card-body">
                                 <h4 class="text-success">{{ "%.1f"|format(total_size) }} MB</h4>
-                                <p class="mb-0 text-muted">Taille Totale</p>
+                                <p class="mb-0 text-muted">{{ _('Taille Totale') }}</p>
                             </div>
                         </div>
                     </div>
@@ -113,7 +119,7 @@
                         <div class="stats-card card">
                             <div class="card-body">
                                 <h4 class="text-info">{{ avg_resolution }}</h4>
-                                <p class="mb-0 text-muted">Résolution Moyenne</p>
+                                <p class="mb-0 text-muted">{{ _('Résolution Moyenne') }}</p>
                             </div>
                         </div>
                     </div>
@@ -121,7 +127,7 @@
                         <div class="stats-card card">
                             <div class="card-body">
                                 <h4 class="text-warning">{{ most_common_mode.upper() }}</h4>
-                                <p class="mb-0 text-muted">Mode le Plus Fréquent</p>
+                                <p class="mb-0 text-muted">{{ _('Mode le Plus Fréquent') }}</p>
                             </div>
                         </div>
                     </div>
@@ -136,8 +142,8 @@
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Aucun script spécial nécessaire pour la galerie
-    console.log('Galerie chargée avec {{ images|length }} images');
+    // {{ _('Aucun script spécial nécessaire pour la galerie') }}
+    console.log('{{ _("Galerie chargée avec") }} {{ images|length }} {{ _("images") }}');
 });
 </script>
-{% endblock %} 
+{% endblock %}

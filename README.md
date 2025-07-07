@@ -4,7 +4,7 @@ Tran Anthony, Musquin Maxime, Sancesario Tom, Fils-de-Ahmed Ilyes, Chartier Max
 
 ## Description
 
-Cette interface web Flask permet de télécharger et analyser des images pour extraire diverses caractéristiques :
+Cette interface web Flask permet de télécharger et analyser des images pour extraire diverses caractéristiques des images de poubelles, pour ensuite savori si celles-ci sont pleines ou non (WIP):
 
 - **Analyse des couleurs** : Moyennes RGB, luminosité
 - **Analyse du contraste** : Niveaux par canal et global

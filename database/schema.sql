@@ -1,4 +1,3 @@
-
 CREATE TABLE IF NOT EXISTS images (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     filename VARCHAR(255) NOT NULL,
@@ -10,7 +9,9 @@ CREATE TABLE IF NOT EXISTS images (
     width INTEGER,
     height INTEGER,
     total_pixels INTEGER,
-    image_mode VARCHAR(20) -- rgb ou grayscale
+    image_mode VARCHAR(20), -- rgb ou grayscale
+    latitude REAL,
+    longitude REAL
 );
 
 CREATE TABLE IF NOT EXISTS color_analysis (
@@ -65,4 +66,4 @@ CREATE INDEX IF NOT EXISTS idx_images_filename ON images(filename);
 CREATE INDEX IF NOT EXISTS idx_color_analysis_image_id ON color_analysis(image_id);
 CREATE INDEX IF NOT EXISTS idx_contrast_analysis_image_id ON contrast_analysis(image_id);
 CREATE INDEX IF NOT EXISTS idx_edge_detection_image_id ON edge_detection(image_id);
-CREATE INDEX IF NOT EXISTS idx_luminance_analysis_image_id ON luminance_analysis(image_id); 
+CREATE INDEX IF NOT EXISTS idx_luminance_analysis_image_id ON luminance_analysis(image_id);

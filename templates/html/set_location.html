@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Localisation de la Poubelle') }} - E-BOUEUR{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('index') }}">{{ _('Accueil') }}</a></li>
+                <li class="breadcrumb-item active">{{ _('Localisation de la Poubelle') }}</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+<div class="row">
+    <div class="col-lg-6 offset-lg-3">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <span>{{ _('Localisation de la Poubelle') }}</span>
+                    <i class="bi bi-geo-alt"></i>
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-3">
+                    <img src="{{ url_for('static', filename='uploads/' + image.filename) }}" style="max-width: 200px; max-height: 200px;">
+                </div>
+                <div id="set-location-map" style="height: 350px; width: 100%; border-radius: 10px;"></div>
+                <form id="location-form" method="post" class="mt-3">
+                    <input type="hidden" name="latitude" id="latitude-input">
+                    <input type="hidden" name="longitude" id="longitude-input">
+                    <button type="submit" class="btn btn-success w-100" id="save-location-btn" disabled>
+                        <i class="bi bi-geo"></i> {{ _('Valider la localisation et voir l\'analyse') }}
+                    </button>
+                </form>
+                <div class="text-muted mt-2 text-center">
+                    {{ _('Cliquez sur la carte pour définir la localisation de la poubelle.') }}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var defaultLat = 48.8566;
+    var defaultLng = 2.3522;
+    var map = L.map('set-location-map').setView([defaultLat, defaultLng], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    let marker = null;
+
+    // Try to get user's location
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(position) {
+            var lat = position.coords.latitude;
+            var lng = position.coords.longitude;
+            map.setView([lat, lng], 16);
+            marker = L.marker([lat, lng]).addTo(map);
+            document.getElementById('latitude-input').value = lat;
+            document.getElementById('longitude-input').value = lng;
+            document.getElementById('save-location-btn').disabled = false;
+        }, function() {
+            // If denied or failed, do nothing (keep Paris as default)
+        });
+    }
+
+    map.on('click', function(e) {
+        if (marker) {
+            map.removeLayer(marker);
+        }
+        marker = L.marker(e.latlng).addTo(map);
+        document.getElementById('latitude-input').value = e.latlng.lat;
+        document.getElementById('longitude-input').value = e.latlng.lng;
+        document.getElementById('save-location-btn').disabled = false;
+    });
+});
+</script>
+{% endblock %}

@@ -3,7 +3,7 @@ import sqlite3
 import pathlib
 from datetime import datetime
 from werkzeug.utils import secure_filename
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
 import numpy as np
 from PIL import Image
 import base64
@@ -191,6 +191,197 @@ def create_histogram_plot(img_array):
     
     return plot_data
 
+# Supported languages and translations (expand as needed)
+LANGUAGES = ['fr', 'en']
+TRANSLATIONS = {
+    'fr': {
+        'Galerie des Images Analysées': 'Galerie des Images Analysées',
+        'Accueil': 'Accueil',
+        'Galerie': 'Galerie',
+        'Carte': 'Carte',
+        'Télécharger une Image': 'Télécharger une Image',
+        'Types d\'Analyses Disponibles': 'Types d\'Analyses Disponibles',
+        'Statistiques de la Plateforme': 'Statistiques de la Plateforme',
+        'Téléchargez vos images pour une analyse complète des caractéristiques :': 'Téléchargez vos images pour une analyse complète des caractéristiques :',
+        'Couleurs, Contraste, Contours et Luminance': 'Couleurs, Contraste, Contours et Luminance',
+        'Glissez votre image ici': 'Glissez votre image ici',
+        'ou cliquez pour sélectionner un fichier': 'ou cliquez pour sélectionner un fichier',
+        'Choisir un fichier': 'Choisir un fichier',
+        'Formats supportés: PNG, JPG, JPEG, GIF, BMP, TIFF (max 16MB)': 'Formats supportés: PNG, JPG, JPEG, GIF, BMP, TIFF (max 16MB)',
+        'Aperçu :': 'Aperçu :',
+        'Analyser l\'Image': 'Analyser l\'Image',
+        'Changer d\'image': 'Changer d\'image',
+        'Images Analysées': 'Images Analysées',
+        'Taille Totale (MB)': 'Taille Totale (MB)',
+        'Largeur Moyenne': 'Largeur Moyenne',
+        'Hauteur Moyenne': 'Hauteur Moyenne',
+        'Aucune image analysée': 'Aucune image analysée',
+        'Commencez par télécharger et analyser votre première image.': 'Commencez par télécharger et analyser votre première image.',
+        'Voir l\'Analyse': 'Voir l\'Analyse',
+        'Images Totales': 'Images Totales',
+        'Taille Totale': 'Taille Totale',
+        'Résolution Moyenne': 'Résolution Moyenne',
+        'Mode le Plus Fréquent': 'Mode le Plus Fréquent',
+        'Image non trouvée': 'Image non trouvée',
+        'Image analysée avec succès!': 'Image analysée avec succès!',
+        'Erreur lors de l\'analyse:': 'Erreur lors de l\'analyse:',
+        'Type de fichier non autorisé. Utilisez: PNG, JPG, JPEG, GIF, BMP, TIFF': 'Type de fichier non autorisé. Utilisez: PNG, JPG, JPEG, GIF, BMP, TIFF',
+        'Aucun fichier sélectionné': 'Aucun fichier sélectionné',
+        'Statistiques de la Galerie': 'Statistiques de la Galerie',
+        'Images Totales': 'Images Totales',
+        'Taille Totale': 'Taille Totale',
+        'Résolution Moyenne': 'Résolution Moyenne',
+        'Mode le Plus Fréquent': 'Mode le Plus Fréquent',
+        'Analyse des Couleurs': 'Analyse des Couleurs',
+        'Analyse du Contraste': 'Analyse du Contraste',
+        'Détection de Contours': 'Détection de Contours',
+        'Analyse de Luminance': 'Analyse de Luminance',
+        'Histogramme des Couleurs': 'Histogramme des Couleurs',
+        'Téléchargé le': 'Téléchargé le',
+        'Date inconnue': 'Date inconnue',
+        'Taille': 'Taille',
+        'Dimensions': 'Dimensions',
+        'Pixels': 'Pixels',
+        'Mode': 'Mode',
+        'Image Analysée': 'Image Analysée',
+        'Métadonnées': 'Métadonnées',
+        'Localisation de la Poubelle': 'Localisation de la Poubelle',
+        'Place de la Concorde, 75001 Paris': 'Place de la Concorde, 75001 Paris',
+        'Analyse des Couleurs': 'Analyse des Couleurs',
+        'Rouge Moyen': 'Rouge Moyen',
+        'Vert Moyen': 'Vert Moyen',
+        'Bleu Moyen': 'Bleu Moyen',
+        'Luminosité': 'Luminosité',
+        'Valeur Grise Moyenne': 'Valeur Grise Moyenne',
+        'Analyse du Contraste': 'Analyse du Contraste',
+        'Intensité Min': 'Intensité Min',
+        'Intensité Max': 'Intensité Max',
+        'Niveau de Contraste': 'Niveau de Contraste',
+        'Ratio de Contraste': 'Ratio de Contraste',
+        'Contraste par Canal': 'Contraste par Canal',
+        'Canal Rouge': 'Canal Rouge',
+        'Canal Vert': 'Canal Vert',
+        'Canal Bleu': 'Canal Bleu',
+        'Détection de Contours': 'Détection de Contours',
+        'Méthode': 'Méthode',
+        'Pixels de Contour': 'Pixels de Contour',
+        'Pourcentage': 'Pourcentage',
+        'Densité des Contours': 'Densité des Contours',
+        'Analyse de Luminance': 'Analyse de Luminance',
+        'Luminance Moyenne': 'Luminance Moyenne',
+        'Écart-type': 'Écart-type',
+        'Plage Luminance': 'Plage Luminance',
+        'Étendue': 'Étendue',
+        'Histogramme non disponible': 'Histogramme non disponible',
+        'Analyser une Autre Image': 'Analyser une Autre Image',
+        'Voir la Galerie': 'Voir la Galerie',
+        # ...add more as needed...
+    },
+    'en': {
+        'Galerie des Images Analysées': 'Analyzed Images Gallery',
+        'Accueil': 'Home',
+        'Galerie': 'Gallery',
+        'Carte': 'Map',
+        'Télécharger une Image': 'Upload Image',
+        'Types d\'Analyses Disponibles': 'Available Analyses',
+        'Statistiques de la Plateforme': 'Platform Statistics',
+        'Téléchargez vos images pour une analyse complète des caractéristiques :': 'Upload your images for a complete analysis of features:',
+        'Couleurs, Contraste, Contours et Luminance': 'Colors, Contrast, Edges and Luminance',
+        'Glissez votre image ici': 'Drag your image here',
+        'ou cliquez pour sélectionner un fichier': 'or click to select a file',
+        'Choisir un fichier': 'Choose a file',
+        'Formats supportés: PNG, JPG, JPEG, GIF, BMP, TIFF (max 16MB)': 'Supported formats: PNG, JPG, JPEG, GIF, BMP, TIFF (max 16MB)',
+        'Aperçu :': 'Preview:',
+        'Analyser l\'Image': 'Analyze Image',
+        'Changer d\'image': 'Change image',
+        'Images Analysées': 'Analyzed Images',
+        'Taille Totale (MB)': 'Total Size (MB)',
+        'Largeur Moyenne': 'Average Width',
+        'Hauteur Moyenne': 'Average Height',
+        'Aucune image analysée': 'No analyzed image',
+        'Commencez par télécharger et analyser votre première image.': 'Start by uploading and analyzing your first image.',
+        'Voir l\'Analyse': 'View Analysis',
+        'Images Totales': 'Total Images',
+        'Taille Totale': 'Total Size',
+        'Résolution Moyenne': 'Average Resolution',
+        'Mode le Plus Fréquent': 'Most Common Mode',
+        'Image non trouvée': 'Image not found',
+        'Image analysée avec succès!': 'Image successfully analyzed!',
+        'Erreur lors de l\'analyse:': 'Error during analysis:',
+        'Type de fichier non autorisé. Utilisez: PNG, JPG, JPEG, GIF, BMP, TIFF': 'File type not allowed. Use: PNG, JPG, JPEG, GIF, BMP, TIFF',
+        'Aucun fichier sélectionné': 'No file selected',
+        'Statistiques de la Galerie': 'Gallery Statistics',
+        'Images Totales': 'Total Images',
+        'Taille Totale': 'Total Size',
+        'Résolution Moyenne': 'Average Resolution',
+        'Mode le Plus Fréquent': 'Most Common Mode',
+        'Analyse des Couleurs': 'Color Analysis',
+        'Analyse du Contraste': 'Contrast Analysis',
+        'Détection de Contours': 'Edge Detection',
+        'Analyse de Luminance': 'Luminance Analysis',
+        'Histogramme des Couleurs': 'Color Histogram',
+        'Téléchargé le': 'Uploaded on',
+        'Date inconnue': 'Unknown date',
+        'Taille': 'Size',
+        'Dimensions': 'Dimensions',
+        'Pixels': 'Pixels',
+        'Mode': 'Mode',
+        'Image Analysée': 'Analyzed Image',
+        'Métadonnées': 'Metadata',
+        'Localisation de la Poubelle': 'Trash Location',
+        'Place de la Concorde, 75001 Paris': 'Place de la Concorde, 75001 Paris',
+        'Analyse des Couleurs': 'Color Analysis',
+        'Rouge Moyen': 'Average Red',
+        'Vert Moyen': 'Average Green',
+        'Bleu Moyen': 'Average Blue',
+        'Luminosité': 'Brightness',
+        'Valeur Grise Moyenne': 'Average Gray Value',
+        'Analyse du Contraste': 'Contrast Analysis',
+        'Intensité Min': 'Min Intensity',
+        'Intensité Max': 'Max Intensity',
+        'Niveau de Contraste': 'Contrast Level',
+        'Ratio de Contraste': 'Contrast Ratio',
+        'Contraste par Canal': 'Channel Contrast',
+        'Canal Rouge': 'Red Channel',
+        'Canal Vert': 'Green Channel',
+        'Canal Bleu': 'Blue Channel',
+        'Détection de Contours': 'Edge Detection',
+        'Méthode': 'Method',
+        'Pixels de Contour': 'Edge Pixels',
+        'Pourcentage': 'Percentage',
+        'Densité des Contours': 'Edge Density',
+        'Analyse de Luminance': 'Luminance Analysis',
+        'Luminance Moyenne': 'Average Luminance',
+        'Écart-type': 'Standard Deviation',
+        'Plage Luminance': 'Luminance Range',
+        'Étendue': 'Range',
+        'Histogramme non disponible': 'Histogram not available',
+        'Analyser une Autre Image': 'Analyze Another Image',
+        'Voir la Galerie': 'View Gallery',
+        # ...add more as needed...
+    }
+}
+
+def get_locale():
+    lang = session.get('lang')
+    if lang in LANGUAGES:
+        return lang
+    return 'fr'
+
+def translate(text):
+    lang = get_locale()
+    return TRANSLATIONS.get(lang, {}).get(text, text)
+
+@app.context_processor
+def inject_translations():
+    return dict(_=translate, lang=get_locale())
+
+@app.route('/set_language/<lang>')
+def set_language(lang):
+    if lang in LANGUAGES:
+        session['lang'] = lang
+    return redirect(request.referrer or url_for('index'))
+
 @app.route('/')
 def index():
     """Page d'accueil avec formulaire d'upload"""
@@ -219,14 +410,41 @@ def upload_file():
         try:
             # Analyser et stocker l'image
             image_id = analyze_and_store_image(filepath, filename)
-            flash('Image analysée avec succès!')
-            return redirect(url_for('view_analysis', image_id=image_id))
+            # Instead of redirecting to analysis, redirect to location selection if needed
+            conn = get_db_connection()
+            image = conn.execute('SELECT * FROM images WHERE id = ?', (image_id,)).fetchone()
+            conn.close()
+            if not image['latitude'] or not image['longitude']:
+                return redirect(url_for('set_location_page', image_id=image_id))
+            else:
+                flash('Image analysée avec succès!')
+                return redirect(url_for('view_analysis', image_id=image_id))
         except Exception as e:
             flash(f'Erreur lors de l\'analyse: {str(e)}')
             return redirect(url_for('index'))
     else:
         flash('Type de fichier non autorisé. Utilisez: PNG, JPG, JPEG, GIF, BMP, TIFF')
         return redirect(url_for('index'))
+
+@app.route('/analysis/<int:image_id>/set_location', methods=['GET', 'POST'])
+def set_location_page(image_id):
+    """Page pour choisir la localisation si elle n'est pas dans les métadonnées"""
+    conn = get_db_connection()
+    image = conn.execute('SELECT * FROM images WHERE id = ?', (image_id,)).fetchone()
+    conn.close()
+    if request.method == 'POST':
+        lat = request.form.get('latitude')
+        lng = request.form.get('longitude')
+        if lat and lng:
+            conn = get_db_connection()
+            conn.execute('UPDATE images SET latitude = ?, longitude = ? WHERE id = ?', (lat, lng, image_id))
+            conn.commit()
+            conn.close()
+            flash(translate('Localisation enregistrée avec succès!'))
+            return redirect(url_for('view_analysis', image_id=image_id))
+        else:
+            flash(translate('Erreur lors de l\'enregistrement de la localisation.'))
+    return render_template('set_location.html', image=image)
 
 @app.route('/analysis/<int:image_id>')
 def view_analysis(image_id):
@@ -310,56 +528,51 @@ def api_stats():
 @app.route('/map')
 def map_view():
     """Page de la carte interactive"""
-    # Données d'exemple des emplacements de poubelles (coordonnées autour de Paris)
+    conn = get_db_connection()
+    images = conn.execute('''
+        SELECT id, filename, latitude, longitude, upload_date, filepath
+        FROM images
+        WHERE latitude IS NOT NULL AND longitude IS NOT NULL
+    ''').fetchall()
+    conn.close()
+
     trash_locations = [
         {
-            "name": "Poubelle République",
-            "lat": 48.8671,
-            "lng": 2.3636,
-            "address": "Place de la République, 75003 Paris",
-            "type": "Tri sélectif",
-            "status": "Propre",
-            "lastCollection": "2025-01-02"
-        },
-        {
-            "name": "Poubelle Châtelet",
-            "lat": 48.8566,
-            "lng": 2.3475,
-            "address": "Place du Châtelet, 75001 Paris",
-            "type": "Ordures ménagères",
-            "status": "À collecter",
-            "lastCollection": "2024-12-30"
-        },
-        {
-            "name": "Poubelle Bastille",
-            "lat": 48.8532,
-            "lng": 2.3692,
-            "address": "Place de la Bastille, 75011 Paris",
-            "type": "Tri sélectif",
-            "status": "Propre",
-            "lastCollection": "2025-01-02"
-        },
-        {
-            "name": "Poubelle Louvre",
-            "lat": 48.8606,
-            "lng": 2.3376,
-            "address": "Cour du Louvre, 75001 Paris",
-            "type": "Ordures ménagères",
-            "status": "Propre",
-            "lastCollection": "2025-01-01"
-        },
-        {
-            "name": "Poubelle Notre-Dame",
-            "lat": 48.8530,
-            "lng": 2.3499,
-            "address": "Parvis Notre-Dame, 75004 Paris",
-            "type": "Tri sélectif",
-            "status": "À collecter",
-            "lastCollection": "2024-12-28"
+            "name": img['filename'],
+            "lat": img['latitude'],
+            "lng": img['longitude'],
+            "address": img['filepath'],
+            "type": "Image",
+            "status": "Image",
+            "lastCollection": img['upload_date'].strftime('%Y-%m-%d') if img['upload_date'] else ""
         }
+        for img in images
     ]
-    
+
+    # Optionally, you can add static demo bins as before if you want
+    # trash_locations += [ ...static bins... ]
+
     return render_template('map.html', trash_locations=trash_locations)
+
+@app.route('/delete_image/<int:image_id>', methods=['POST'])
+def delete_image(image_id):
+    """Supprime une image et ses analyses associées"""
+    conn = get_db_connection()
+    image = conn.execute('SELECT * FROM images WHERE id = ?', (image_id,)).fetchone()
+    # Use the translate function directly instead of _
+    if image:
+        try:
+            if os.path.exists(image['filepath']):
+                os.remove(image['filepath'])
+        except Exception:
+            pass
+        conn.execute('DELETE FROM images WHERE id = ?', (image_id,))
+        conn.commit()
+        flash(translate('Image supprimée avec succès!'))
+    else:
+        flash(translate('Image non trouvée'))
+    conn.close()
+    return redirect(url_for('gallery'))
 
 if __name__ == '__main__':
     # Initialiser la base de données

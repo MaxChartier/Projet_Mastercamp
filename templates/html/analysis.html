@@ -7,8 +7,8 @@
     <div class="col-12">
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Accueil</a></li>
-                <li class="breadcrumb-item active">Analyse de {{ image.filename }}</li>
+                <li class="breadcrumb-item"><a href="{{ url_for('index') }}">{{ _('Accueil') }}</a></li>
+                <li class="breadcrumb-item active">{{ _('Analyse de') }} {{ image.filename }}</li>
             </ol>
         </nav>
     </div>
@@ -20,7 +20,7 @@
         <div class="card h-100">
             <div class="card-header">
                 <h5 class="mb-0">
-                    <span>Image Analysée</span>
+                    <span>{{ _('Image Analysée') }}</span>
                     <i class="bi bi-image"></i>
                 </h5>
             </div>
@@ -31,42 +31,41 @@
                 <small class="text-muted">
                     {% if image.upload_date %}
                         {% if image.upload_date is string %}
-                            Téléchargé le {{ image.upload_date }}
+                            {{ _('Téléchargé le') }} {{ image.upload_date }}
                         {% else %}
-                            Téléchargé le {{ image.upload_date.strftime('%d/%m/%Y à %H:%M') }}
+                            {{ _('Téléchargé le') }} {{ image.upload_date.strftime('%d/%m/%Y à %H:%M') }}
                         {% endif %}
                     {% else %}
-                        Date inconnue
+                        {{ _('Date inconnue') }}
                     {% endif %}
                 </small>
-                
                 <!-- Métadonnées dans le même div -->
                 <hr class="my-2">
-                <h6 class="text-muted mb-2">Métadonnées</h6>
+                <h6 class="text-muted mb-2">{{ _('Métadonnées') }}</h6>
                 <div class="metadata-compact">
                     <div class="row g-2">
                         <div class="col-6">
                             <div class="metric-box">
                                 <div class="metric-value">{{ "%.1f"|format(image.file_size_ko) }} Ko</div>
-                                <div class="metric-label">Taille</div>
+                                <div class="metric-label">{{ _('Taille') }}</div>
                             </div>
                         </div>
                         <div class="col-6">
                             <div class="metric-box">
                                 <div class="metric-value">{{ image.width }}x{{ image.height }}</div>
-                                <div class="metric-label">Dimensions</div>
+                                <div class="metric-label">{{ _('Dimensions') }}</div>
                             </div>
                         </div>
                         <div class="col-6">
                             <div class="metric-box">
                                 <div class="metric-value">{{ "{:,}".format(image.total_pixels) }}</div>
-                                <div class="metric-label">Pixels</div>
+                                <div class="metric-label">{{ _('Pixels') }}</div>
                             </div>
                         </div>
                         <div class="col-6">
                             <div class="metric-box">
                                 <div class="metric-value">{{ image.image_mode.upper() }}</div>
-                                <div class="metric-label">Mode</div>
+                                <div class="metric-label">{{ _('Mode') }}</div>
                             </div>
                         </div>
                     </div>
@@ -79,9 +78,14 @@
         <div class="card h-100 d-flex flex-column">
             <div class="card-header">
                 <h5 class="mb-0">
-                    <span>Localisation de la Poubelle 
-                        <span class="text-muted ms-3 header-address">
-                            Place de la Concorde, 75001 Paris
+                    <span>
+                        {{ _('Localisation de la Poubelle') }}
+                        <span class="text-muted ms-3 header-address" id="address-display">
+                            {% if image.latitude and image.longitude %}
+                                {{ image.latitude }}, {{ image.longitude }}
+                            {% else %}
+                                {{ _('Aucune localisation enregistrée') }}
+                            {% endif %}
                         </span>
                     </span>
                     <i class="bi bi-geo-alt"></i>
@@ -89,6 +93,18 @@
             </div>
             <div class="card-body p-0 flex-grow-1">
                 <div id="analysis-map" style="height: 100%; min-height: 400px; border-radius: 0 0 20px 20px;"></div>
+                {% if not image.latitude or not image.longitude %}
+                <div class="p-3 text-center" id="location-form-container">
+                    <span class="text-muted">{{ _('Cliquez sur la carte pour définir la localisation de la poubelle.') }}</span>
+                    <form id="location-form" method="post" action="{{ url_for('set_location_page', image_id=image.id) }}" style="display:inline;">
+                        <input type="hidden" name="latitude" id="latitude-input">
+                        <input type="hidden" name="longitude" id="longitude-input">
+                        <button type="submit" class="btn btn-success mt-2" id="save-location-btn" disabled>
+                            <i class="bi bi-geo"></i> {{ _('Enregistrer la localisation') }}
+                        </button>
+                    </form>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -360,43 +376,40 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialiser la carte centrée sur Paris
+    const hasLocation = {{ 'true' if image.latitude and image.longitude else 'false' }};
     const map = L.map('analysis-map').setView([48.8566, 2.3522], 13);
-    
-    // Ajouter les tuiles OpenStreetMap
+
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap contributors'
     }).addTo(map);
-    
-    // Ajouter un marqueur pour la poubelle (position d'exemple)
-    const trashIcon = L.icon({
-        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
-        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-        iconSize: [25, 41],
-        iconAnchor: [12, 41],
-        popupAnchor: [1, -34],
-        shadowSize: [41, 41]
-    });
-    
-    const marker = L.marker([48.8566, 2.3522], {icon: trashIcon})
-        .addTo(map)
-        .bindPopup(`
-            <div style="min-width: 200px;">
-                <h6 style="color: #22c55e; margin-bottom: 8px;">
-                    <i class="bi bi-trash"></i> Poubelle Analysée
-                </h6>
-                <p style="margin-bottom: 6px; font-size: 13px;">
-                    <strong>Image:</strong> {{ image.filename[:20] }}...
-                </p>
-                <p style="margin-bottom: 6px; font-size: 13px;">
-                    <strong>Taille:</strong> {{ "%.1f"|format(image.file_size_ko) }} Ko
-                </p>
-                <p style="margin-bottom: 0; font-size: 13px;">
-                    <strong>Coordonnées:</strong> 48.8566, 2.3522
-                </p>
-            </div>
-        `)
-        .openPopup();
+
+    let marker = null;
+
+    if (hasLocation) {
+        marker = L.marker([{{ image.latitude or 48.8566 }}, {{ image.longitude or 2.3522 }}]).addTo(map);
+        map.setView([{{ image.latitude or 48.8566 }}, {{ image.longitude or 2.3522 }}], 15);
+        // Disable map click for location selection
+        map.dragging.disable();
+        map.doubleClickZoom.disable();
+        map.scrollWheelZoom.disable();
+        map.boxZoom.disable();
+        map.keyboard.disable();
+        if (map.tap) map.tap.disable();
+        map.off('click');
+        // Optionally, show a tooltip or popup
+        marker.bindPopup("{{ _('Localisation validée') }}").openPopup();
+    } else {
+        map.on('click', function(e) {
+            if (marker) {
+                map.removeLayer(marker);
+            }
+            marker = L.marker(e.latlng).addTo(map);
+            document.getElementById('latitude-input').value = e.latlng.lat;
+            document.getElementById('longitude-input').value = e.latlng.lng;
+            document.getElementById('save-location-btn').disabled = false;
+            document.getElementById('address-display').textContent = e.latlng.lat.toFixed(5) + ', ' + e.latlng.lng.toFixed(5);
+        });
+    }
 });
 </script>
-{% endblock %} 
+{% endblock %}

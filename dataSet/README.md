@@ -185,5 +185,5 @@ Compétences attendues :
 **Appréciation des Experts (2 points)** 
 - Innovation et Créativité, Impact Potentiel, Qualité de la Documentation.
 
-## Timeline 10 min de présentation, 5 min Demo Et 5 min de de Q&R
+## Timeline 10 min de présentation, 5 min Demo Et 5 min de de Questions Réponses
 
