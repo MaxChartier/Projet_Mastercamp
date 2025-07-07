@@ -410,14 +410,41 @@ def upload_file():
         try:
             # Analyser et stocker l'image
             image_id = analyze_and_store_image(filepath, filename)
-            flash('Image analysée avec succès!')
-            return redirect(url_for('view_analysis', image_id=image_id))
+            # Instead of redirecting to analysis, redirect to location selection if needed
+            conn = get_db_connection()
+            image = conn.execute('SELECT * FROM images WHERE id = ?', (image_id,)).fetchone()
+            conn.close()
+            if not image['latitude'] or not image['longitude']:
+                return redirect(url_for('set_location_page', image_id=image_id))
+            else:
+                flash('Image analysée avec succès!')
+                return redirect(url_for('view_analysis', image_id=image_id))
         except Exception as e:
             flash(f'Erreur lors de l\'analyse: {str(e)}')
             return redirect(url_for('index'))
     else:
         flash('Type de fichier non autorisé. Utilisez: PNG, JPG, JPEG, GIF, BMP, TIFF')
         return redirect(url_for('index'))
+
+@app.route('/analysis/<int:image_id>/set_location', methods=['GET', 'POST'])
+def set_location_page(image_id):
+    """Page pour choisir la localisation si elle n'est pas dans les métadonnées"""
+    conn = get_db_connection()
+    image = conn.execute('SELECT * FROM images WHERE id = ?', (image_id,)).fetchone()
+    conn.close()
+    if request.method == 'POST':
+        lat = request.form.get('latitude')
+        lng = request.form.get('longitude')
+        if lat and lng:
+            conn = get_db_connection()
+            conn.execute('UPDATE images SET latitude = ?, longitude = ? WHERE id = ?', (lat, lng, image_id))
+            conn.commit()
+            conn.close()
+            flash(translate('Localisation enregistrée avec succès!'))
+            return redirect(url_for('view_analysis', image_id=image_id))
+        else:
+            flash(translate('Erreur lors de l\'enregistrement de la localisation.'))
+    return render_template('set_location.html', image=image)
 
 @app.route('/analysis/<int:image_id>')
 def view_analysis(image_id):
@@ -501,55 +528,30 @@ def api_stats():
 @app.route('/map')
 def map_view():
     """Page de la carte interactive"""
-    # Données d'exemple des emplacements de poubelles (coordonnées autour de Paris)
+    conn = get_db_connection()
+    images = conn.execute('''
+        SELECT id, filename, latitude, longitude, upload_date, filepath
+        FROM images
+        WHERE latitude IS NOT NULL AND longitude IS NOT NULL
+    ''').fetchall()
+    conn.close()
+
     trash_locations = [
         {
-            "name": "Poubelle République",
-            "lat": 48.8671,
-            "lng": 2.3636,
-            "address": "Place de la République, 75003 Paris",
-            "type": "Tri sélectif",
-            "status": "Propre",
-            "lastCollection": "2025-01-02"
-        },
-        {
-            "name": "Poubelle Châtelet",
-            "lat": 48.8566,
-            "lng": 2.3475,
-            "address": "Place du Châtelet, 75001 Paris",
-            "type": "Ordures ménagères",
-            "status": "À collecter",
-            "lastCollection": "2024-12-30"
-        },
-        {
-            "name": "Poubelle Bastille",
-            "lat": 48.8532,
-            "lng": 2.3692,
-            "address": "Place de la Bastille, 75011 Paris",
-            "type": "Tri sélectif",
-            "status": "Propre",
-            "lastCollection": "2025-01-02"
-        },
-        {
-            "name": "Poubelle Louvre",
-            "lat": 48.8606,
-            "lng": 2.3376,
-            "address": "Cour du Louvre, 75001 Paris",
-            "type": "Ordures ménagères",
-            "status": "Propre",
-            "lastCollection": "2025-01-01"
-        },
-        {
-            "name": "Poubelle Notre-Dame",
-            "lat": 48.8530,
-            "lng": 2.3499,
-            "address": "Parvis Notre-Dame, 75004 Paris",
-            "type": "Tri sélectif",
-            "status": "À collecter",
-            "lastCollection": "2024-12-28"
+            "name": img['filename'],
+            "lat": img['latitude'],
+            "lng": img['longitude'],
+            "address": img['filepath'],
+            "type": "Image",
+            "status": "Image",
+            "lastCollection": img['upload_date'].strftime('%Y-%m-%d') if img['upload_date'] else ""
         }
+        for img in images
     ]
-    
+
+    # Optionally, you can add static demo bins as before if you want
+    # trash_locations += [ ...static bins... ]
+
     return render_template('map.html', trash_locations=trash_locations)
 
 @app.route('/delete_image/<int:image_id>', methods=['POST'])
