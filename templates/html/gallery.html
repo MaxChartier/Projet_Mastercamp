@@ -40,7 +40,10 @@
                                     </form>
                                     <img src="{{ url_for('static', filename='uploads/' + image.filename) }}" 
                                          class="card-img-top" 
-                                         style="height: 200px; object-fit: cover;">
+                                         style="height: 200px; object-fit: cover;"
+                                         onerror="console.log('Failed to load image: {{ image.filename }}'); this.src='{{ url_for('static', filename='images/placeholder.png') }}'; this.alt='Image non disponible';"
+                                         alt="{{ image.filename }}"
+                                         onload="console.log('Successfully loaded image: {{ image.filename }}');">
                                     <div class="card-body d-flex flex-column">
                                         <h6 class="card-title text-truncate">{{ image.filename }}</h6>
                                         <div class="mb-2">

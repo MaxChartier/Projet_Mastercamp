@@ -51,10 +51,10 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
-def analyze_and_store_image(filepath, filename):
-    """La Main fonction qui appelle les fonctions d'extraction de features"""
+def analyze_and_store_image(filepath_or_filename, filename):
+    # Always build the full path for analysis
+    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     conn = get_db_connection()
-    
     try:
         # Obtenir les métadonnées de base
         file_info = get_file_size(filepath)
@@ -72,9 +72,8 @@ def analyze_and_store_image(filepath, filename):
             INSERT INTO images (filename, filepath, file_size_bytes, file_size_ko, file_size_mo,
                               width, height, total_pixels, image_mode)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (filename, filepath, file_info['bytes'], file_info['ko'], file_info['mo'],
+        ''', (filename, filename, file_info['bytes'], file_info['ko'], file_info['mo'],
               dimensions['w'], dimensions['h'], dimensions['pixels_tt'], mode))
-        
         image_id = cursor.lastrowid
         
         # Analyse des couleurs
@@ -286,7 +285,7 @@ TRANSLATIONS = {
         'Types d\'Analyses Disponibles': 'Available Analyses',
         'Statistiques de la Plateforme': 'Platform Statistics',
         'Téléchargez vos images pour une analyse complète des caractéristiques :': 'Upload your images for a complete analysis of features:',
-        'Couleurs, Contraste, Contours et Luminance': 'Colors, Contrast, Edges and Luminance',
+        'Couleurs, Contraste, Edges et Luminance': 'Colors, Contrast, Edges and Luminance',
         'Glissez votre image ici': 'Drag your image here',
         'ou cliquez pour sélectionner un fichier': 'or click to select a file',
         'Choisir un fichier': 'Choose a file',
@@ -384,67 +383,79 @@ def set_language(lang):
 
 @app.route('/')
 def index():
-    """Page d'accueil avec formulaire d'upload"""
+    print("Rendering index page")
     return render_template('index.html')
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
-    """Traite l'upload et l'analyse d'une image"""
+    print("Upload route called")
     if 'file' not in request.files:
+        print("No file in request.files")
         flash('Aucun fichier sélectionné')
         return redirect(request.url)
     
     file = request.files['file']
+    print(f"File object: {file}")
     if file.filename == '':
+        print("File filename is empty")
         flash('Aucun fichier sélectionné')
         return redirect(request.url)
     
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
-        # Ajouter timestamp pour éviter les conflits
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_')
         filename = timestamp + filename
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(filepath)
+        
+        # Ensure upload folder exists
+        os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+        print(f"Saving uploaded file to: {filepath}")
         
         try:
-            # Analyser et stocker l'image
+            # Save the file properly
+            file.save(filepath)
+            print(f"File exists after save: {os.path.exists(filepath)}")
+            print(f"File size after save: {os.path.getsize(filepath)} bytes")
+            
+            if not os.path.exists(filepath) or os.path.getsize(filepath) == 0:
+                print("File does not exist after save or is empty")
+                flash("Erreur lors de l'enregistrement du fichier. Vérifiez les permissions du dossier uploads.")
+                return redirect(url_for('index'))
+            
+            # Analyze and store the image
             image_id = analyze_and_store_image(filepath, filename)
-            # Instead of redirecting to analysis, redirect to location selection if needed
+            print(f"Inserted image with id: {image_id} and filename: {filename}")
+            
             conn = get_db_connection()
             image = conn.execute('SELECT * FROM images WHERE id = ?', (image_id,)).fetchone()
+            print(f"Fetched image from DB after insert: {image}")
             conn.close()
+            
+            if not image:
+                print("Image not found in DB after insert")
+                flash("Erreur : l'image n'a pas été enregistrée dans la base de données.")
+                if os.path.exists(filepath):
+                    os.remove(filepath)
+                return redirect(url_for('index'))
+            
             if not image['latitude'] or not image['longitude']:
+                print("Image missing latitude/longitude, redirecting to set_location_page")
                 return redirect(url_for('set_location_page', image_id=image_id))
             else:
+                print("Image has location, redirecting to view_analysis")
                 flash('Image analysée avec succès!')
                 return redirect(url_for('view_analysis', image_id=image_id))
+                
         except Exception as e:
+            print(f"Exception during file save or analysis: {e}")
             flash(f'Erreur lors de l\'analyse: {str(e)}')
+            if os.path.exists(filepath):
+                os.remove(filepath)
             return redirect(url_for('index'))
     else:
+        print("File type not allowed")
         flash('Type de fichier non autorisé. Utilisez: PNG, JPG, JPEG, GIF, BMP, TIFF')
         return redirect(url_for('index'))
-
-@app.route('/analysis/<int:image_id>/set_location', methods=['GET', 'POST'])
-def set_location_page(image_id):
-    """Page pour choisir la localisation si elle n'est pas dans les métadonnées"""
-    conn = get_db_connection()
-    image = conn.execute('SELECT * FROM images WHERE id = ?', (image_id,)).fetchone()
-    conn.close()
-    if request.method == 'POST':
-        lat = request.form.get('latitude')
-        lng = request.form.get('longitude')
-        if lat and lng:
-            conn = get_db_connection()
-            conn.execute('UPDATE images SET latitude = ?, longitude = ? WHERE id = ?', (lat, lng, image_id))
-            conn.commit()
-            conn.close()
-            flash(translate('Localisation enregistrée avec succès!'))
-            return redirect(url_for('view_analysis', image_id=image_id))
-        else:
-            flash(translate('Erreur lors de l\'enregistrement de la localisation.'))
-    return render_template('set_location.html', image=image)
 
 @app.route('/analysis/<int:image_id>')
 def view_analysis(image_id):
@@ -466,7 +477,8 @@ def view_analysis(image_id):
     conn.close()
     
     # Créer l'histogramme
-    img = Image.open(image['filepath'])
+    img_path = os.path.join(app.config['UPLOAD_FOLDER'], image['filename'])
+    img = Image.open(img_path)
     img_array = np.array(img)
     histogram_plot = create_histogram_plot(img_array)
     
@@ -478,6 +490,26 @@ def view_analysis(image_id):
                          luminance_analysis=luminance_analysis,
                          histogram_plot=histogram_plot)
 
+@app.route('/analysis/<int:image_id>/set_location', methods=['GET', 'POST'])
+def set_location_page(image_id):
+    """Page pour choisir la localisation si elle n'est pas dans les métadonnées"""
+    conn = get_db_connection()
+    image = conn.execute('SELECT * FROM images WHERE id = ?', (image_id,)).fetchone()
+    conn.close()
+    if request.method == 'POST':
+        lat = request.form.get('latitude')
+        lng = request.form.get('longitude')
+        if lat and lng:
+            conn = get_db_connection()
+            conn.execute('UPDATE images SET latitude = ?, longitude = ? WHERE id = ?', (lat, lng, image_id))
+            conn.commit()
+            conn.close()
+            flash(translate('Localisation enregistrée avec succès!'))
+            return redirect(url_for('view_analysis', image_id=image_id))
+        else:
+            flash(translate('Erreur lors de l\'enregistrement de la localisation.'))
+    return render_template('set_location.html', image=image)
+
 @app.route('/gallery')
 def gallery():
     """Affiche la galerie de toutes les images analysées"""
@@ -486,7 +518,10 @@ def gallery():
         SELECT id, filename, filepath, upload_date, file_size_ko, width, height, image_mode
         FROM images ORDER BY upload_date DESC
     ''').fetchall()
-    
+    print(f"Number of images fetched for gallery: {len(images)}")
+    for img in images:
+        file_on_disk = os.path.join(app.config['UPLOAD_FOLDER'], img['filename'])
+        print(f"Gallery image: {file_on_disk} - Exists: {os.path.exists(file_on_disk)}")
     # Calculer les statistiques pour la galerie
     if images:
         total_size = sum(img['file_size_ko'] for img in images) / 1024  # Convertir en MB
@@ -535,7 +570,7 @@ def map_view():
         WHERE latitude IS NOT NULL AND longitude IS NOT NULL
     ''').fetchall()
     conn.close()
-
+    from flask import url_for
     trash_locations = [
         {
             "name": img['filename'],
@@ -544,14 +579,11 @@ def map_view():
             "address": img['filepath'],
             "type": "Image",
             "status": "Image",
-            "lastCollection": img['upload_date'].strftime('%Y-%m-%d') if img['upload_date'] else ""
+            "lastCollection": img['upload_date'].strftime('%Y-%m-%d') if img['upload_date'] else "",
+            "image_url": url_for('static', filename='uploads/' + img['filename'])
         }
         for img in images
     ]
-
-    # Optionally, you can add static demo bins as before if you want
-    # trash_locations += [ ...static bins... ]
-
     return render_template('map.html', trash_locations=trash_locations)
 
 @app.route('/delete_image/<int:image_id>', methods=['POST'])
@@ -559,11 +591,11 @@ def delete_image(image_id):
     """Supprime une image et ses analyses associées"""
     conn = get_db_connection()
     image = conn.execute('SELECT * FROM images WHERE id = ?', (image_id,)).fetchone()
-    # Use the translate function directly instead of _
     if image:
         try:
-            if os.path.exists(image['filepath']):
-                os.remove(image['filepath'])
+            file_on_disk = os.path.join(app.config['UPLOAD_FOLDER'], image['filename'])
+            if os.path.exists(file_on_disk):
+                os.remove(file_on_disk)
         except Exception:
             pass
         conn.execute('DELETE FROM images WHERE id = ?', (image_id,))
@@ -573,6 +605,22 @@ def delete_image(image_id):
         flash(translate('Image non trouvée'))
     conn.close()
     return redirect(url_for('gallery'))
+
+@app.route('/static/uploads/<filename>')
+def uploaded_file(filename):
+    """Serve uploaded files with proper error handling"""
+    try:
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        if os.path.exists(filepath):
+            from flask import send_from_directory
+            return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+        else:
+            print(f"File not found: {filepath}")
+            # Return a default image or 404
+            return send_from_directory('static/images', 'trash_1.png')
+    except Exception as e:
+        print(f"Error serving file {filename}: {e}")
+        return send_from_directory('static/images', 'trash_1.png')
 
 if __name__ == '__main__':
     # Initialiser la base de données

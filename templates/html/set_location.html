@@ -24,7 +24,11 @@
             </div>
             <div class="card-body">
                 <div class="text-center mb-3">
-                    <img src="{{ url_for('static', filename='uploads/' + image.filename) }}" style="max-width: 200px; max-height: 200px;">
+                    <img src="{{ url_for('static', filename='uploads/' + image.filename) }}" 
+                         style="max-width: 200px; max-height: 200px; border-radius: 10px;"
+                         onerror="console.log('Failed to load image in set_location: {{ image.filename }}'); this.src='{{ url_for('static', filename='images/placeholder.png') }}'; this.alt='Image non disponible';"
+                         alt="{{ image.filename }}"
+                         onload="console.log('Successfully loaded image in set_location: {{ image.filename }}');">
                 </div>
                 <div id="set-location-map" style="height: 350px; width: 100%; border-radius: 10px;"></div>
                 <form id="location-form" method="post" class="mt-3">
