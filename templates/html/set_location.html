@@ -59,7 +59,22 @@ document.addEventListener('DOMContentLoaded', function() {
         attribution: '© OpenStreetMap contributors'
     }).addTo(map);
 
-    let marker = null;
+    var marker = null;
+
+    // Determine icon color based on prediction with updated colors
+    var iconColor = '#6b7280'; // default gray
+    {% if image.prediction == 'clean' %}
+        iconColor = '#15803d';
+    {% elif image.prediction == 'dirty' %}
+        iconColor = '#dc2626';
+    {% endif %}
+
+    var icon = L.divIcon({
+        className: 'custom-div-icon',
+        html: '<div style="background-color: ' + iconColor + '; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.3);"></div>',
+        iconSize: [20, 20],
+        iconAnchor: [10, 10]
+    });
 
     // Try to get user's location
     if (navigator.geolocation) {
@@ -67,7 +82,7 @@ document.addEventListener('DOMContentLoaded', function() {
             var lat = position.coords.latitude;
             var lng = position.coords.longitude;
             map.setView([lat, lng], 16);
-            marker = L.marker([lat, lng]).addTo(map);
+            marker = L.marker([lat, lng], {icon: icon}).addTo(map);
             document.getElementById('latitude-input').value = lat;
             document.getElementById('longitude-input').value = lng;
             document.getElementById('save-location-btn').disabled = false;
@@ -80,11 +95,18 @@ document.addEventListener('DOMContentLoaded', function() {
         if (marker) {
             map.removeLayer(marker);
         }
-        marker = L.marker(e.latlng).addTo(map);
+        marker = L.marker(e.latlng, {icon: icon}).addTo(map);
         document.getElementById('latitude-input').value = e.latlng.lat;
         document.getElementById('longitude-input').value = e.latlng.lng;
         document.getElementById('save-location-btn').disabled = false;
     });
 });
 </script>
+
+<style>
+.custom-div-icon {
+    background: transparent !important;
+    border: none !important;
+}
+</style>
 {% endblock %}

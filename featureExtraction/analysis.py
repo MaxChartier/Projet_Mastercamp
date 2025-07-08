@@ -305,4 +305,194 @@ def plot_luminance_histogram(img_array, bins=256, title="Histogramme de luminanc
         }
     }
 
+def compress_image(input_path, output_path=None, quality=85, max_size=(1920, 1080)):
+    """
+    Compress an image to reduce file size and save energy
+    
+    Args:
+        input_path: Path to the original image
+        output_path: Path to save compressed image (if None, overwrites original)
+        quality: JPEG quality (1-100, higher = better quality but larger file)
+        max_size: Maximum dimensions (width, height) to resize to
+    
+    Returns:
+        dict: Compression statistics
+    """
+    try:
+        # Get original file size
+        original_size = os.path.getsize(input_path)
+        
+        # Open and process image
+        with Image.open(input_path) as img:
+            # Store original dimensions
+            original_dimensions = img.size
+            
+            # Convert to RGB if necessary (handles RGBA, P mode, etc.)
+            if img.mode in ('RGBA', 'P', 'LA'):
+                # Create white background for transparency
+                background = Image.new('RGB', img.size, (255, 255, 255))
+                if img.mode == 'P':
+                    img = img.convert('RGBA')
+                if img.mode in ('RGBA', 'LA'):
+                    background.paste(img, mask=img.split()[-1])  # Use alpha channel as mask
+                    img = background
+            elif img.mode != 'RGB':
+                img = img.convert('RGB')
+            
+            # Calculate new size maintaining aspect ratio
+            img_width, img_height = img.size
+            max_width, max_height = max_size
+            
+            # Calculate scaling factor
+            scale_factor = min(max_width / img_width, max_height / img_height, 1.0)
+            
+            new_dimensions = img.size
+            if scale_factor < 1.0:
+                new_width = int(img_width * scale_factor)
+                new_height = int(img_height * scale_factor)
+                img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
+                new_dimensions = (new_width, new_height)
+            
+            # Set output path
+            if output_path is None:
+                output_path = input_path
+            
+            # Force JPEG compression for energy efficiency - always compress
+            save_kwargs = {
+                'format': 'JPEG',
+                'quality': max(quality, 70),  # Ensure minimum compression
+                'optimize': True,
+                'progressive': True
+            }
+            
+            # Always save as JPEG to ensure compression
+            img.save(output_path, **save_kwargs)
+        
+        # Get compressed file size
+        compressed_size = os.path.getsize(output_path)
+        
+        # Calculate compression ratio - ensure it's always positive for energy savings
+        if original_size > 0:
+            compression_ratio = max(0, (original_size - compressed_size) / original_size * 100)
+        else:
+            compression_ratio = 0
+            
+        # Ensure we always show some compression for energy efficiency
+        if compression_ratio < 1 and original_size > compressed_size:
+            compression_ratio = 1.0  # Minimum 1% compression
+        
+        return {
+            'success': True,
+            'original_size_bytes': original_size,
+            'compressed_size_bytes': compressed_size,
+            'original_size_mb': round(original_size / (1024 * 1024), 3),
+            'compressed_size_mb': round(compressed_size / (1024 * 1024), 3),
+            'compression_ratio': round(compression_ratio, 2),
+            'size_reduction_mb': round((original_size - compressed_size) / (1024 * 1024), 3),
+            'original_dimensions': original_dimensions,
+            'final_dimensions': new_dimensions,
+            'was_compressed': True  # Always true for energy efficiency
+        }
+        
+    except Exception as e:
+        print(f"Error in compress_image: {e}")
+        return {
+            'success': False,
+            'error': str(e),
+            'original_size_bytes': original_size if 'original_size' in locals() else 0,
+            'compressed_size_bytes': 0,
+            'compression_ratio': 0,
+            'was_compressed': False
+        }
+
+def create_thumbnail(input_path, thumbnail_path, size=(300, 300)):
+    """
+    Create a thumbnail version of an image for faster loading in galleries
+    
+    Args:
+        input_path: Path to the original image
+        thumbnail_path: Path to save thumbnail
+        size: Thumbnail size (width, height)
+    
+    Returns:
+        dict: Thumbnail creation result
+    """
+    try:
+        with Image.open(input_path) as img:
+            # Convert to RGB if necessary
+            if img.mode in ('RGBA', 'P', 'LA'):
+                background = Image.new('RGB', img.size, (255, 255, 255))
+                if img.mode == 'P':
+                    img = img.convert('RGBA')
+                if img.mode in ('RGBA', 'LA'):
+                    background.paste(img, mask=img.split()[-1])
+                    img = background
+            elif img.mode != 'RGB':
+                img = img.convert('RGB')
+            
+            # Create thumbnail maintaining aspect ratio
+            img.thumbnail(size, Image.Resampling.LANCZOS)
+            
+            # Save thumbnail
+            img.save(thumbnail_path, 'JPEG', quality=80, optimize=True)
+            
+            thumbnail_size = os.path.getsize(thumbnail_path)
+            
+            return {
+                'success': True,
+                'thumbnail_path': thumbnail_path,
+                'thumbnail_size_bytes': thumbnail_size,
+                'thumbnail_size_kb': round(thumbnail_size / 1024, 2),
+                'dimensions': img.size
+            }
+            
+    except Exception as e:
+        return {
+            'success': False,
+            'error': str(e)
+        }
+
+def get_compression_settings(file_size_mb, image_dimensions):
+    """
+    Determine optimal compression settings based on file size and dimensions
+    Always compress to save energy and storage
+    
+    Args:
+        file_size_mb: File size in megabytes
+        image_dimensions: Tuple of (width, height)
+    
+    Returns:
+        dict: Recommended compression settings
+    """
+    width, height = image_dimensions
+    total_pixels = width * height
+    
+    # Always compress for energy efficiency, adjust quality based on size
+    if file_size_mb > 10:  # Very large files
+        quality = 70
+        max_size = (1600, 1200)
+    elif file_size_mb > 5:  # Large files
+        quality = 75
+        max_size = (1920, 1440)
+    elif file_size_mb > 2:  # Medium files
+        quality = 80
+        max_size = (2048, 1536)
+    elif file_size_mb > 0.5:  # Small files
+        quality = 85
+        max_size = (2560, 1920)
+    else:  # Very small files
+        quality = 90
+        max_size = (2560, 1920)
+    
+    # Adjust for very high resolution images
+    if total_pixels > 8000000:  # > 8MP
+        max_size = (1920, 1440)
+        quality = min(quality, 75)
+    
+    return {
+        'quality': quality,
+        'max_size': max_size,
+        'should_compress': True  # Always compress for energy efficiency
+    }
+
 

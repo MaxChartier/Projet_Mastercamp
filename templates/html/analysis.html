@@ -1,13 +1,42 @@
 {% extends "base.html" %}
 
-{% block title %}Analyse - E-BOUEUR{{ image.filename }}{% endblock %}
+{% block title %}{{ _('Analyse de') }} {{ image.filename }} - E-BOUEUR{% endblock %}
 
 {% block content %}
+<!-- Navigation arrows for analysis -->
+<div class="analysis-navigation">
+    {% if prev_image_id %}
+        <a href="{{ url_for('view_analysis', image_id=prev_image_id) }}" 
+           class="nav-arrow nav-arrow-left" 
+           id="prevImageBtn"
+           title="{{ _('Image précédente') }}">
+            <i class="bi bi-chevron-left"></i>
+        </a>
+    {% endif %}
+    
+    {% if next_image_id %}
+        <a href="{{ url_for('view_analysis', image_id=next_image_id) }}" 
+           class="nav-arrow nav-arrow-right" 
+           id="nextImageBtn"
+           title="{{ _('Image suivante') }}">
+            <i class="bi bi-chevron-right"></i>
+        </a>
+    {% endif %}
+    
+    <!-- Position indicator -->
+    <div class="position-indicator">
+        <span class="badge badge-glassmorphism">
+            {{ current_position }} / {{ total_images }}
+        </span>
+    </div>
+</div>
+
 <div class="row">
     <div class="col-12">
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb">
                 <li class="breadcrumb-item"><a href="{{ url_for('index') }}">{{ _('Accueil') }}</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('gallery') }}">{{ _('Galerie') }}</a></li>
                 <li class="breadcrumb-item active">{{ _('Analyse de') }} {{ image.filename }}</li>
             </ol>
         </nav>
@@ -26,7 +55,10 @@
             </div>
             <div class="card-body text-center card-body-compact">
                 <img src="{{ url_for('static', filename='uploads/' + image.filename) }}" 
-                     class="image-preview image-preview-compact mb-3">
+                     class="image-preview image-preview-compact mb-3"
+                     onerror="console.log('Failed to load image in analysis: {{ image.filename }}'); this.src='{{ url_for('static', filename='images/placeholder.png') }}'; this.alt='Image non disponible';"
+                     alt="{{ image.filename }}"
+                     onload="console.log('Successfully loaded image in analysis: {{ image.filename }}');">
                 <h6>{{ image.filename }}</h6>
                 <small class="text-muted">
                     {% if image.upload_date %}
@@ -110,13 +142,98 @@
     </div>
 </div>
 
+<!-- Classification Results - Add this new section before color analysis -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <span>{{ _('Classification de la Poubelle') }}</span>
+                    <i class="bi bi-robot"></i>
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if image.prediction %}
+                    <div class="row justify-content-center">
+                        <div class="col-md-6">
+                            <div class="text-center mb-3">
+                                {% if image.prediction == 'clean' %}
+                                    <div class="alert alert-success classification-result" role="alert">
+                                        <i class="bi bi-check-circle-fill fs-1 mb-2"></i>
+                                        <h4>{{ _('Poubelle Propre') }}</h4>
+                                        <p class="mb-0">{{ _('La poubelle semble être en bon état et propre.') }}</p>
+                                    </div>
+                                {% elif image.prediction == 'dirty' %}
+                                    <div class="alert alert-warning classification-result" role="alert">
+                                        <i class="bi bi-exclamation-triangle-fill fs-1 mb-2"></i>
+                                        <h4>{{ _('Poubelle Sale') }}</h4>
+                                        <p class="mb-0">{{ _('La poubelle nécessite un nettoyage ou une attention particulière.') }}</p>
+                                    </div>
+                                {% else %}
+                                    <div class="alert alert-secondary classification-result" role="alert">
+                                        <i class="bi bi-question-circle-fill fs-1 mb-2"></i>
+                                        <h4>{{ _('Classification Incertaine') }}</h4>
+                                        <p class="mb-0">{{ _('Impossible de déterminer l\'état de la poubelle.') }}</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="metric-box">
+                                <div class="metric-value">
+                                    {% if image.prediction_confidence %}
+                                        {{ "%.1f%%"|format(image.prediction_confidence * 100) }}
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </div>
+                                <div class="metric-label">{{ _('Niveau de Confiance') }}</div>
+                            </div>
+                            {% if image.prediction_confidence %}
+                                <div class="progress mt-2">
+                                    <div class="progress-bar 
+                                        {% if image.prediction_confidence > 0.8 %}bg-success
+                                        {% elif image.prediction_confidence > 0.6 %}bg-warning
+                                        {% else %}bg-danger{% endif %}" 
+                                        role="progressbar" 
+                                        style="width: {{ (image.prediction_confidence * 100)|round }}%"
+                                        aria-valuenow="{{ (image.prediction_confidence * 100)|round }}" 
+                                        aria-valuemin="0" 
+                                        aria-valuemax="100">
+                                    </div>
+                                </div>
+                                <small class="text-muted mt-1 d-block">
+                                    {% if image.prediction_confidence > 0.8 %}
+                                        {{ _('Très fiable') }}
+                                    {% elif image.prediction_confidence > 0.6 %}
+                                        {{ _('Moyennement fiable') }}
+                                    {% else %}
+                                        {{ _('Peu fiable') }}
+                                    {% endif %}
+                                </small>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="text-center">
+                        <div class="alert alert-info classification-result" role="alert">
+                            <i class="bi bi-info-circle"></i>
+                            {{ _('Aucune classification disponible pour cette image.') }}
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Analyse des couleurs -->
 <div class="row mb-4">
     <div class="col-12">
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0">
-                    <span>Analyse des Couleurs</span>
+                    <span>{{ _('Analyse des Couleurs') }}</span>
                     <i class="bi bi-palette"></i>
                 </h5>
             </div>
@@ -127,25 +244,25 @@
                             <div class="col-md-3">
                                 <div class="metric-box" style="border-left: 4px solid #dc3545;">
                                     <div class="metric-value text-danger">{{ "%.1f"|format(color_analysis.avg_red) }}</div>
-                                    <div class="metric-label">Rouge Moyen</div>
+                                    <div class="metric-label">{{ _('Rouge Moyen') }}</div>
                                 </div>
                             </div>
                             <div class="col-md-3">
                                 <div class="metric-box" style="border-left: 4px solid #28a745;">
                                     <div class="metric-value text-success">{{ "%.1f"|format(color_analysis.avg_green) }}</div>
-                                    <div class="metric-label">Vert Moyen</div>
+                                    <div class="metric-label">{{ _('Vert Moyen') }}</div>
                                 </div>
                             </div>
                             <div class="col-md-3">
                                 <div class="metric-box" style="border-left: 4px solid #007bff;">
                                     <div class="metric-value text-primary">{{ "%.1f"|format(color_analysis.avg_blue) }}</div>
-                                    <div class="metric-label">Bleu Moyen</div>
+                                    <div class="metric-label">{{ _('Bleu Moyen') }}</div>
                                 </div>
                             </div>
                             <div class="col-md-3">
                                 <div class="metric-box">
                                     <div class="metric-value">{{ "%.1f"|format(color_analysis.brightness) }}</div>
-                                    <div class="metric-label">Luminosité</div>
+                                    <div class="metric-label">{{ _('Luminosité') }}</div>
                                 </div>
                             </div>
                         </div>
@@ -154,7 +271,7 @@
                             <div class="col-md-6">
                                 <div class="metric-box">
                                     <div class="metric-value">{{ "%.1f"|format(color_analysis.avg_gray) }}</div>
-                                    <div class="metric-label">Valeur Grise Moyenne</div>
+                                    <div class="metric-label">{{ _('Valeur Grise Moyenne') }}</div>
                                 </div>
                             </div>
                         </div>
@@ -171,7 +288,7 @@
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0">
-                    <span>Analyse du Contraste</span>
+                    <span>{{ _('Analyse du Contraste') }}</span>
                     <i class="bi bi-sliders"></i>
                 </h5>
             </div>
@@ -181,49 +298,49 @@
                         <div class="col-md-3">
                             <div class="metric-box">
                                 <div class="metric-value">{{ "%.1f"|format(contrast_analysis.min_intensity) }}</div>
-                                <div class="metric-label">Intensité Min</div>
+                                <div class="metric-label">{{ _('Intensité Min') }}</div>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="metric-box">
                                 <div class="metric-value">{{ "%.1f"|format(contrast_analysis.max_intensity) }}</div>
-                                <div class="metric-label">Intensité Max</div>
+                                <div class="metric-label">{{ _('Intensité Max') }}</div>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="metric-box">
                                 <div class="metric-value">{{ "%.1f"|format(contrast_analysis.contrast_level) }}</div>
-                                <div class="metric-label">Niveau de Contraste</div>
+                                <div class="metric-label">{{ _('Niveau de Contraste') }}</div>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="metric-box">
                                 <div class="metric-value">{{ "%.1f%%"|format(contrast_analysis.contrast_ratio * 100) }}</div>
-                                <div class="metric-label">Ratio de Contraste</div>
+                                <div class="metric-label">{{ _('Ratio de Contraste') }}</div>
                             </div>
                         </div>
                     </div>
                     
                     {% if contrast_analysis.mode == 'rgb' and contrast_analysis.red_contrast %}
                         <hr>
-                        <h6>Contraste par Canal</h6>
+                        <h6>{{ _('Contraste par Canal') }}</h6>
                         <div class="row">
                             <div class="col-md-4">
                                 <div class="metric-box" style="border-left: 4px solid #dc3545;">
                                     <div class="metric-value text-danger">{{ "%.1f"|format(contrast_analysis.red_contrast) }}</div>
-                                    <div class="metric-label">Canal Rouge</div>
+                                    <div class="metric-label">{{ _('Canal Rouge') }}</div>
                                 </div>
                             </div>
                             <div class="col-md-4">
                                 <div class="metric-box" style="border-left: 4px solid #28a745;">
                                     <div class="metric-value text-success">{{ "%.1f"|format(contrast_analysis.green_contrast) }}</div>
-                                    <div class="metric-label">Canal Vert</div>
+                                    <div class="metric-label">{{ _('Canal Vert') }}</div>
                                 </div>
                             </div>
                             <div class="col-md-4">
                                 <div class="metric-box" style="border-left: 4px solid #007bff;">
                                     <div class="metric-value text-primary">{{ "%.1f"|format(contrast_analysis.blue_contrast) }}</div>
-                                    <div class="metric-label">Canal Bleu</div>
+                                    <div class="metric-label">{{ _('Canal Bleu') }}</div>
                                 </div>
                             </div>
                         </div>
@@ -240,31 +357,77 @@
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0">
-                    <span>Détection de Contours</span>
+                    <span>{{ _('Détection de Contours') }}</span>
                     <i class="bi bi-grid-3x3"></i>
                 </h5>
             </div>
             <div class="card-body">
                 {% if edge_detection %}
+                    <!-- Visualizations Row -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="mb-3">{{ _('Visualisations des Contours') }}</h6>
+                            
+                            <!-- Canny Edge Detection -->
+                            <div class="mb-4">
+                                <h6 class="text-muted mb-2">{{ _('Méthode Canny') }}</h6>
+                                {% if canny_plot %}
+                                    <div class="text-center">
+                                        <img src="data:image/png;base64,{{ canny_plot }}" 
+                                             class="img-fluid" 
+                                             style="max-width: 100%; height: auto; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+                                    </div>
+                                {% else %}
+                                    <p class="text-muted">{{ _('Visualisation Canny non disponible') }}</p>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Sobel Edge Detection -->
+                            <div class="mb-4">
+                                <h6 class="text-muted mb-2">{{ _('Méthode Sobel') }}</h6>
+                                {% if sobel_plot %}
+                                    <div class="text-center">
+                                        <img src="data:image/png;base64,{{ sobel_plot }}" 
+                                             class="img-fluid" 
+                                             style="max-width: 100%; height: auto; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+                                    </div>
+                                {% else %}
+                                    <p class="text-muted">{{ _('Visualisation Sobel non disponible') }}</p>
+                                {% endif %}
+                            </div>
+                            
+                            <hr class="my-4">
+                        </div>
+                    </div>
+                    
+                    <!-- Statistics Row -->
                     <div class="row">
+                        <div class="col-12">
+                            <h6 class="mb-3">{{ _('Statistiques Détaillées') }}</h6>
+                        </div>
                         {% for edge in edge_detection %}
                             <div class="col-md-6">
                                 <div class="card mb-3">
                                     <div class="card-header">
-                                        <h6 class="mb-0">Méthode {{ edge.method.capitalize() }}</h6>
+                                        <h6 class="mb-0">
+                                            {{ _('Méthode') }} {{ edge.method.capitalize() }}
+                                            <span class="badge badge-glassmorphism ms-2">
+                                                {{ "%.2f%%"|format(edge.edge_percentage) }}
+                                            </span>
+                                        </h6>
                                     </div>
                                     <div class="card-body">
                                         <div class="row">
                                             <div class="col-6">
                                                 <div class="metric-box">
                                                     <div class="metric-value">{{ "{:,}".format(edge.edge_pixels) }}</div>
-                                                    <div class="metric-label">Pixels de Contour</div>
+                                                    <div class="metric-label">{{ _('Pixels de Contour') }}</div>
                                                 </div>
                                             </div>
                                             <div class="col-6">
                                                 <div class="metric-box">
                                                     <div class="metric-value">{{ "%.2f%%"|format(edge.edge_percentage) }}</div>
-                                                    <div class="metric-label">Pourcentage</div>
+                                                    <div class="metric-label">{{ _('Pourcentage') }}</div>
                                                 </div>
                                             </div>
                                         </div>
@@ -272,7 +435,7 @@
                                             <div class="col-12">
                                                 <div class="metric-box">
                                                     <div class="metric-value">{{ "%.4f"|format(edge.edge_density) }}</div>
-                                                    <div class="metric-label">Densité des Contours</div>
+                                                    <div class="metric-label">{{ _('Densité des Contours') }}</div>
                                                 </div>
                                             </div>
                                         </div>
@@ -280,6 +443,10 @@
                                 </div>
                             </div>
                         {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center">
+                        <p class="text-muted">{{ _('Aucune détection de contours disponible') }}</p>
                     </div>
                 {% endif %}
             </div>
@@ -293,7 +460,7 @@
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0">
-                    <span>Analyse de Luminance</span>
+                    <span>{{ _('Analyse de Luminance') }}</span>
                     <i class="bi bi-brightness-high"></i>
                 </h5>
             </div>
@@ -303,25 +470,25 @@
                         <div class="col-md-3">
                             <div class="metric-box">
                                 <div class="metric-value">{{ "%.1f"|format(luminance_analysis.mean_luminance) }}</div>
-                                <div class="metric-label">Luminance Moyenne</div>
+                                <div class="metric-label">{{ _('Luminance Moyenne') }}</div>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="metric-box">
                                 <div class="metric-value">{{ "%.1f"|format(luminance_analysis.std_luminance) }}</div>
-                                <div class="metric-label">Écart-type</div>
+                                <div class="metric-label">{{ _('Écart-type') }}</div>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="metric-box">
                                 <div class="metric-value">{{ "%.1f"|format(luminance_analysis.min_luminance) }} - {{ "%.1f"|format(luminance_analysis.max_luminance) }}</div>
-                                <div class="metric-label">Plage Luminance</div>
+                                <div class="metric-label">{{ _('Plage Luminance') }}</div>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="metric-box">
                                 <div class="metric-value">{{ "%.1f"|format(luminance_analysis.luminance_range) }}</div>
-                                <div class="metric-label">Étendue</div>
+                                <div class="metric-label">{{ _('Étendue') }}</div>
                             </div>
                         </div>
                     </div>
@@ -337,7 +504,7 @@
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0">
-                    <span>Histogramme des Couleurs</span>
+                    <span>{{ _('Histogramme des Couleurs') }}</span>
                     <i class="bi bi-bar-chart"></i>
                 </h5>
             </div>
@@ -347,7 +514,7 @@
                          class="img-fluid" 
                          style="max-width: 100%; height: auto;">
                 {% else %}
-                    <p class="text-muted">Histogramme non disponible</p>
+                    <p class="text-muted">{{ _('Histogramme non disponible') }}</p>
                 {% endif %}
             </div>
         </div>
@@ -357,14 +524,29 @@
 <!-- Actions -->
 <div class="row">
     <div class="col-12 text-center">
+        {% if prev_image_id %}
+            <a href="{{ url_for('view_analysis', image_id=prev_image_id) }}" class="btn btn-secondary me-2">
+                <i class="bi bi-arrow-left"></i>
+                {{ _('Image Précédente') }}
+            </a>
+        {% endif %}
+        
         <a href="{{ url_for('index') }}" class="btn btn-primary me-2">
-            <i class="bi bi-arrow-left"></i>
-            Analyser une Autre Image
+            <i class="bi bi-plus-circle"></i>
+            {{ _('Analyser une Autre Image') }}
         </a>
-        <a href="{{ url_for('gallery') }}" class="btn btn-secondary">
+        
+        <a href="{{ url_for('gallery') }}" class="btn btn-secondary me-2">
             <i class="bi bi-grid"></i>
-            Voir la Galerie
+            {{ _('Voir la Galerie') }}
         </a>
+        
+        {% if next_image_id %}
+            <a href="{{ url_for('view_analysis', image_id=next_image_id) }}" class="btn btn-secondary">
+                {{ _('Image Suivante') }}
+                <i class="bi bi-arrow-right"></i>
+            </a>
+        {% endif %}
     </div>
 </div>
 {% endblock %}
@@ -376,18 +558,34 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const hasLocation = {{ 'true' if image.latitude and image.longitude else 'false' }};
-    const map = L.map('analysis-map').setView([48.8566, 2.3522], 13);
+    var hasLocation = {{ 'true' if image.latitude and image.longitude else 'false' }};
+    var map = L.map('analysis-map').setView([48.8566, 2.3522], 13);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap contributors'
     }).addTo(map);
 
-    let marker = null;
+    var marker = null;
 
     if (hasLocation) {
-        marker = L.marker([{{ image.latitude or 48.8566 }}, {{ image.longitude or 2.3522 }}]).addTo(map);
+        // Determine icon color based on prediction with updated colors
+        var iconColor = '#6b7280'; // default gray
+        {% if image.prediction == 'clean' %}
+            iconColor = '#15803d';
+        {% elif image.prediction == 'dirty' %}
+            iconColor = '#dc2626';
+        {% endif %}
+        
+        var icon = L.divIcon({
+            className: 'custom-div-icon',
+            html: '<div style="background-color: ' + iconColor + '; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.3);"></div>',
+            iconSize: [20, 20],
+            iconAnchor: [10, 10]
+        });
+        
+        marker = L.marker([{{ image.latitude or 48.8566 }}, {{ image.longitude or 2.3522 }}], {icon: icon}).addTo(map);
         map.setView([{{ image.latitude or 48.8566 }}, {{ image.longitude or 2.3522 }}], 15);
+        
         // Disable map click for location selection
         map.dragging.disable();
         map.doubleClickZoom.disable();
@@ -396,8 +594,32 @@ document.addEventListener('DOMContentLoaded', function() {
         map.keyboard.disable();
         if (map.tap) map.tap.disable();
         map.off('click');
-        // Optionally, show a tooltip or popup
-        marker.bindPopup("{{ _('Localisation validée') }}").openPopup();
+        
+        // Create status popup
+        var statusText = "{{ _('Statut Inconnu') }}";
+        var statusClass = 'status-unknown';
+        
+        {% if image.prediction == 'clean' %}
+            statusText = "{{ _('Poubelle Propre') }}";
+            statusClass = 'status-clean';
+        {% elif image.prediction == 'dirty' %}
+            statusText = "{{ _('Poubelle Sale') }}";
+            statusClass = 'status-dirty';
+        {% endif %}
+        
+        var confidenceText = '';
+        {% if image.prediction_confidence %}
+            confidenceText = '<br><small>' + "{{ _('Confiance:') }}" + ' {{ "%.1f%%"|format(image.prediction_confidence * 100) }}</small>';
+        {% endif %}
+        
+        var popupContent = '<div style="text-align: center; min-width: 180px;">' +
+            '<div class="bin-status-card ' + statusClass + '" style="padding: 8px; border-radius: 6px; border-left: 4px solid;">' +
+                '<strong>' + statusText + '</strong>' +
+                confidenceText +
+            '</div>' +
+            '</div>';
+        
+        marker.bindPopup(popupContent).openPopup();
     } else {
         map.on('click', function(e) {
             if (marker) {
@@ -410,6 +632,213 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('address-display').textContent = e.latlng.lat.toFixed(5) + ', ' + e.latlng.lng.toFixed(5);
         });
     }
+    
+    // Keyboard navigation for analysis
+    document.addEventListener('keydown', function(e) {
+        switch(e.key) {
+            case 'ArrowLeft':
+                e.preventDefault();
+                {% if prev_image_id %}
+                    window.location.href = "{{ url_for('view_analysis', image_id=prev_image_id) }}";
+                {% endif %}
+                break;
+            case 'ArrowRight':
+                e.preventDefault();
+                {% if next_image_id %}
+                    window.location.href = "{{ url_for('view_analysis', image_id=next_image_id) }}";
+                {% endif %}
+                break;
+            case 'Escape':
+                e.preventDefault();
+                window.location.href = "{{ url_for('gallery') }}";
+                break;
+            case 'g':
+            case 'G':
+                e.preventDefault();
+                window.location.href = "{{ url_for('gallery') }}";
+                break;
+            case 'h':
+            case 'H':
+                e.preventDefault();
+                window.location.href = "{{ url_for('index') }}";
+                break;
+        }
+    });
+    
+    // Show navigation hints on page load
+    showNavigationHints();
 });
+
+function showNavigationHints() {
+    // Create a temporary notification for keyboard shortcuts
+    const notification = document.createElement('div');
+    notification.className = 'navigation-hint';
+    notification.innerHTML = `
+        <div class="alert alert-info" style="position: fixed; top: 100px; right: 20px; z-index: 1050; max-width: 300px;">
+            <strong>{{ _('Navigation:') }}</strong><br>
+            <small>
+                ← → {{ _('Images précédente/suivante') }}<br>
+                ESC/G {{ _('Retour à la galerie') }}<br>
+                H {{ _('Retour à l\'accueil') }}
+            </small>
+        </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Auto-hide after 4 seconds
+    setTimeout(() => {
+        if (notification && notification.parentNode) {
+            notification.style.opacity = '0';
+            notification.style.transition = 'opacity 0.5s ease';
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 500);
+        }
+    }, 4000);
+}
 </script>
+
+<style>
+.bin-status-card.status-clean {
+    background: rgba(21, 128, 61, 0.15);
+    border-left-color: #15803d !important;
+    color: #065f46;
+}
+
+.bin-status-card.status-dirty {
+    background: rgba(220, 38, 38, 0.15);
+    border-left-color: #dc2626 !important;
+    color: #7f1d1d;
+}
+
+.bin-status-card.status-unknown {
+    background: rgba(107, 114, 128, 0.1);
+    border-left-color: #6b7280 !important;
+    color: #374151;
+}
+
+.custom-div-icon {
+    background: transparent !important;
+    border: none !important;
+}
+
+.analysis-navigation {
+    position: fixed;
+    top: 50%;
+    left: 0;
+    right: 0;
+    transform: translateY(-50%);
+    pointer-events: none;
+    z-index: 100;
+    padding: 0 20px;
+}
+
+.analysis-navigation .nav-arrow {
+    position: absolute;
+    background: rgba(0, 0, 0, 0.8);
+    border: 1px solid rgba(21, 128, 61, 0.4);
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 24px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    pointer-events: auto;
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.analysis-navigation .nav-arrow:hover {
+    background: rgba(21, 128, 61, 0.9);
+    border-color: rgba(21, 128, 61, 0.8);
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(21, 128, 61, 0.4);
+    color: white;
+    text-decoration: none;
+}
+
+.analysis-navigation .nav-arrow:active {
+    transform: scale(0.95);
+}
+
+.analysis-navigation .nav-arrow-left {
+    left: 20px;
+}
+
+.analysis-navigation .nav-arrow-right {
+    right: 20px;
+}
+
+.position-indicator {
+    position: fixed;
+    top: 120px;
+    right: 20px;
+    z-index: 100;
+    pointer-events: none;
+}
+
+.position-indicator .badge {
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem;
+    pointer-events: auto;
+}
+
+/* Navigation hints */
+.navigation-hint {
+    animation: fadeInSlide 0.5s ease;
+}
+
+@keyframes fadeInSlide {
+    from {
+        opacity: 0;
+        transform: translateX(100px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .analysis-navigation .nav-arrow {
+        width: 45px;
+        height: 45px;
+        font-size: 20px;
+    }
+    
+    .analysis-navigation .nav-arrow-left {
+        left: 10px;
+    }
+    
+    .analysis-navigation .nav-arrow-right {
+        right: 10px;
+    }
+    
+    .position-indicator {
+        top: 90px;
+        right: 10px;
+    }
+    
+    .position-indicator .badge {
+        font-size: 0.8rem;
+        padding: 0.4rem 0.8rem;
+    }
+}
+
+/* Hide navigation arrows on very small screens */
+@media (max-width: 480px) {
+    .analysis-navigation {
+        display: none;
+    }
+}
+</style>
 {% endblock %}

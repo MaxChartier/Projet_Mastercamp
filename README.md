@@ -4,8 +4,9 @@ Tran Anthony, Musquin Maxime, Sancesario Tom, Fils-de-Ahmed Ilyes, Chartier Max
 
 ## Description
 
-Cette interface web Flask permet de télécharger et analyser des images pour extraire diverses caractéristiques des images de poubelles, pour ensuite savori si celles-ci sont pleines ou non (WIP):
+Cette interface web Flask permet de télécharger et analyser des images pour extraire diverses caractéristiques des images de poubelles, et utilise un modèle YOLO pour classifier automatiquement si la poubelle est propre ou sale :
 
+- **Classification IA** : Modèle YOLO fine-tuné pour détecter l'état des poubelles
 - **Analyse des couleurs** : Moyennes RGB, luminosité
 - **Analyse du contraste** : Niveaux par canal et global
 - **Détection de contours** : Algorithmes Canny et Sobel
@@ -19,15 +20,23 @@ Cette interface web Flask permet de télécharger et analyser des images pour ex
 pip install -r requirements.txt
 ```
 
-2. **Lancer l'application :**
+2. **S'assurer que le modèle YOLO est présent :**
+   - Placez votre modèle `yolo11clsFineTuned.pt` dans le dossier `machinelearning/`
+
+3. **Lancer l'application :**
 ```bash
 python app.py
 ```
 
-3. **Accéder à l'interface :**
+4. **Accéder à l'interface :**
 Ouvrez votre navigateur et allez sur `http://127.0.0.1:5001`
 
 ## Fonctionnalités
+
+### Interface Multilingue
+- **Support français/anglais** : Basculez entre les langues avec les drapeaux
+- **Traduction complète** : Toute l'interface est traduite
+- **Persistance** : La langue choisie est conservée dans la session
 
 ### Page d'Accueil
 - **Upload drag & drop** : Glissez-déposez vos images
@@ -36,14 +45,17 @@ Ouvrez votre navigateur et allez sur `http://127.0.0.1:5001`
 - **Statistiques globales** : Métriques de la plateforme
 
 ### Page d'Analyse
+- **Classification IA** : Détection automatique de l'état des poubelles
 - **Visualisation complète** : Toutes les métriques extraites
 - **Histogrammes interactifs** : Graphiques générés automatiquement
 - **Navigation intuitive** : Liens vers galerie et nouvelle analyse
+- **Carte interactive** : Localisation géographique des poubelles
 
 ### Galerie
-- **Vue grille/tableau** : Deux modes d'affichage
-- **Recherche visuelle** : Aperçu de toutes les images
+- **Vue grille** : Aperçu de toutes les images
+- **Recherche visuelle** : Navigation rapide
 - **Statistiques de collection** : Métriques aggregées
+- **Gestion des images** : Suppression et navigation
 
 ## Base de Données
 
@@ -119,4 +131,4 @@ app.run(debug=True)
 2. Créez une branche (`git checkout -b feature/nouvelle-fonctionnalite`)
 3. Committez (`git commit -am 'Ajout nouvelle fonctionnalité'`)
 4. Push (`git push origin feature/nouvelle-fonctionnalite`)
-5. Créez une Pull Request 
+5. Créez une Pull Request

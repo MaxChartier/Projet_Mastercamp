@@ -1,31 +1,125 @@
 {% extends "base.html" %}
 
-{% block title %}{{ _('Carte') }} - E-BOUEUR{% endblock %}
+{% block title %}{{ _('Tableau de Bord') }} - E-BOUEUR{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-12">
-        <nav aria-label="breadcrumb">
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="{{ url_for('index') }}">{{ _('Accueil') }}</a></li>
-                <li class="breadcrumb-item active">{{ _('Carte') }}</li>
-            </ol>
-        </nav>
-    </div>
-</div>
-
-<!-- Carte -->
-<div class="row">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h3 class="mb-0">
-                    <span>{{ _('Carte Interactive des Poubelles') }}</span>
-                    <i class="bi bi-geo-alt"></i>
-                </h3>
+<div class="dashboard-container">
+    <!-- Main Content -->
+    <div class="dashboard-main">
+        <!-- Top Bar -->
+        <div class="dashboard-topbar">
+            <div class="topbar-left">
+                <h2>{{ _('Tableau de Bord - Surveillance des Poubelles') }}</h2>
+                <div class="breadcrumb-custom">
+                    <span>{{ _('Surveillance') }}</span>
+                    <i class="bi bi-chevron-right"></i>
+                    <span>{{ _('Carte Interactive') }}</span>
+                </div>
             </div>
-            <div class="card-body p-0">
-                <div id="map" style="height: 70vh; width: 100%; border-radius: 0 0 20px 20px;"></div>
+            <div class="topbar-right">
+                <div class="status-indicator">
+                    <div class="indicator-dot active"></div>
+                    <span>{{ _('Temps réel') }}</span>
+                </div>
+                <div class="location-info">
+                    <i class="bi bi-geo-alt"></i>
+                    <span>Paris, France</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Header Bar -->
+        <div class="stats-header">
+            <div class="stat-item">
+                <div class="stat-icon">
+                    <i class="bi bi-check-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value" id="cleanStat">0</div>
+                    <div class="stat-label">{{ _('Propres') }}</div>
+                </div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon danger">
+                    <i class="bi bi-exclamation-triangle"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value" id="dirtyStat">0</div>
+                    <div class="stat-label">{{ _('Sales') }}</div>
+                </div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon">
+                    <i class="bi bi-geo"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value" id="totalStat">0</div>
+                    <div class="stat-label">{{ _('Total') }}</div>
+                </div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon">
+                    <i class="bi bi-percent"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value" id="efficiencyStat">0%</div>
+                    <div class="stat-label">{{ _('Propreté') }}</div>
+                </div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon">
+                    <i class="bi bi-camera"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value" id="totalImages">0</div>
+                    <div class="stat-label">{{ _('Images analysées') }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard Grid -->
+        <div class="dashboard-grid">
+            <!-- Map Widget -->
+            <div class="grid-item map-container">
+                <div class="widget-header">
+                    <h3>{{ _('Localisation des Poubelles') }}</h3>
+                    <div class="map-controls">
+                        <button class="control-btn" onclick="centerMap()">
+                            <i class="bi bi-crosshair"></i>
+                        </button>
+                        <button class="control-btn" onclick="toggleHeatmap()">
+                            <i class="bi bi-thermometer"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="map" class="dashboard-map"></div>
+                <div class="map-legend">
+                    <div class="legend-item">
+                        <div class="legend-color clean"></div>
+                        <span>{{ _('Propre') }}</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color dirty"></div>
+                        <span>{{ _('Sale') }}</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color unknown"></div>
+                        <span>{{ _('Inconnu') }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="grid-item activity-panel">
+                <div class="widget-header">
+                    <h3>{{ _('Images Récentes') }}</h3>
+                    <a href="{{ url_for('gallery') }}" class="control-btn">
+                        <i class="bi bi-grid"></i>
+                    </a>
+                </div>
+                <div class="activity-list" id="recentActivity">
+                    <!-- Activity items will be populated by JavaScript -->
+                </div>
             </div>
         </div>
     </div>
@@ -38,60 +132,739 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    var map = L.map('map').setView([48.8566, 2.3522], 12);
+    initializeMap();
+    loadDashboardData();
+});
 
+function initializeMap() {
+    var map = L.map('map', {
+        zoomControl: false,
+        attributionControl: false
+    }).setView([48.8566, 2.3522], 12);
+
+    // Use light/white map tiles
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors'
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 19
+    }).addTo(map);
+
+    // Add custom zoom control
+    L.control.zoom({
+        position: 'bottomright'
     }).addTo(map);
 
     var trashLocations = {{ trash_locations | tojsonfilter | safe }};
 
-    // Show all bins from the database as markers
+    // Create custom icons
+    var cleanIcon = L.divIcon({
+        className: 'custom-marker-icon',
+        html: '<div class="marker-pin clean"><i class="bi bi-check"></i></div>',
+        iconSize: [28, 28],
+        iconAnchor: [14, 14]
+    });
+
+    var dirtyIcon = L.divIcon({
+        className: 'custom-marker-icon',
+        html: '<div class="marker-pin dirty"><i class="bi bi-exclamation-triangle"></i></div>',
+        iconSize: [28, 28],
+        iconAnchor: [14, 14]
+    });
+
+    var unknownIcon = L.divIcon({
+        className: 'custom-marker-icon',
+        html: '<div class="marker-pin unknown"><i class="bi bi-question"></i></div>',
+        iconSize: [28, 28],
+        iconAnchor: [14, 14]
+    });
+
+    // Add markers to map
     for (var i = 0; i < trashLocations.length; i++) {
         var location = trashLocations[i];
         if (location.lat && location.lng) {
-            var popupContent = '<div style="min-width: 200px;">' +
-                '<h6 style="color: #22c55e; margin-bottom: 8px;">' +
-                    '<i class="bi bi-trash" style="margin-right: 5px;"></i>' +
-                    location.name +
-                '</h6>' +
-                '<p style="margin-bottom: 6px; font-size: 13px;">' +
-                    '<strong>{{ _("Adresse:") }}</strong> ' + location.address +
-                '</p>' +
-                '<p style="margin-bottom: 6px; font-size: 13px;">' +
-                    '<strong>{{ _("Date d\'ajout:") }}</strong> ' + location.lastCollection +
-                '</p>' +
-                // Optionally show image thumbnail if static/uploads/filename exists
-                '<img src="' + location.address.replace('static/', '/static/') + '" style="max-width:100%;max-height:100px;border-radius:8px;margin-top:5px;">' +
-                '</div>';
-            L.marker([location.lat, location.lng]).addTo(map)
-                .bindPopup(popupContent);
+            var icon = unknownIcon;
+            
+            if (location.status === 'clean') {
+                icon = cleanIcon;
+            } else if (location.status === 'dirty') {
+                icon = dirtyIcon;
+            }
+
+            var tooltipContent = createTooltipContent(location);
+            
+            L.marker([location.lat, location.lng], {icon: icon}).addTo(map)
+                .bindTooltip(tooltipContent, {
+                    permanent: false,
+                    direction: 'top',
+                    offset: [0, -15],
+                    className: 'dashboard-tooltip',
+                    opacity: 0.95
+                });
         }
     }
 
-    var geoControl = L.control({position: 'topright'});
-    geoControl.onAdd = function (map) {
-        var div = L.DomUtil.create('div', 'leaflet-control-custom');
-        div.innerHTML = '<button id="geolocateBtn" style="background: rgba(0, 0, 0, 0.15); border: 1px solid rgba(255, 255, 255, 0.3); color: white; padding: 10px; border-radius: 15px; backdrop-filter: blur(10px);"><i class="bi bi-geo-alt"></i></button>';
-        div.style.marginTop = '10px';
+    // Store map globally for controls
+    window.dashboardMap = map;
+}
 
-        L.DomEvent.on(div, 'click', function() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(function(position) {
-                    var lat = position.coords.latitude;
-                    var lng = position.coords.longitude;
-                    map.setView([lat, lng], 15);
+function createTooltipContent(location) {
+    return `
+        <div class="tooltip-content">
+            <div class="tooltip-header">
+                <i class="bi bi-trash"></i>
+                <span>${location.name}</span>
+            </div>
+            <div class="tooltip-status ${location.status}">
+                <i class="bi bi-${location.status === 'clean' ? 'check-circle' : 'exclamation-triangle'}"></i>
+                <span>${location.status === 'clean' ? 'Propre' : 'Sale'}</span>
+                ${location.confidence > 0 ? `<small>${(location.confidence * 100).toFixed(1)}%</small>` : ''}
+            </div>
+            <div class="tooltip-date">${location.lastCollection}</div>
+        </div>
+    `;
+}
 
-                    L.marker([lat, lng]).addTo(map)
-                        .bindPopup(jsTrans.yourPosition)
-                        .openPopup();
-                });
-            }
-        });
+async function loadDashboardData() {
+    try {
+        const response = await fetch('/api/stats');
+        const stats = await response.json();
+        
+        updateDashboardStats(stats);
+        await loadRecentImages();
+        
+    } catch (error) {
+        console.error('Error loading dashboard data:', error);
+    }
+}
 
-        return div;
-    };
-    geoControl.addTo(map);
-});
+function updateDashboardStats(stats) {
+    const binStatus = stats.bin_status;
+    const total = binStatus.clean + binStatus.dirty;
+    const cleanPercentage = total > 0 ? (binStatus.clean / total * 100) : 0;
+    
+    // Update stats header
+    document.getElementById('cleanStat').textContent = binStatus.clean;
+    document.getElementById('dirtyStat').textContent = binStatus.dirty;
+    document.getElementById('totalStat').textContent = total;
+    document.getElementById('efficiencyStat').textContent = cleanPercentage.toFixed(1) + '%';
+    document.getElementById('totalImages').textContent = stats.total_images;
+}
+
+async function loadRecentImages() {
+    try {
+        const response = await fetch('/api/recent-images');
+        const images = await response.json();
+        
+        const activityList = document.getElementById('recentActivity');
+        
+        if (images.length === 0) {
+            activityList.innerHTML = `
+                <div class="activity-empty">
+                    <i class="bi bi-images"></i>
+                    <p>{{ _('Aucune image récente') }}</p>
+                    <a href="{{ url_for('index') }}" class="btn btn-sm btn-primary">
+                        {{ _('Télécharger une image') }}
+                    </a>
+                </div>
+            `;
+        } else {
+            activityList.innerHTML = images.map(image => {
+                const statusClass = image.prediction === 'clean' ? 'clean' : image.prediction === 'dirty' ? 'dirty' : 'unknown';
+                const statusIcon = image.prediction === 'clean' ? 'check-circle' : image.prediction === 'dirty' ? 'exclamation-triangle' : 'question-circle';
+                const statusText = image.prediction === 'clean' ? '{{ _("Propre") }}' : image.prediction === 'dirty' ? '{{ _("Sale") }}' : '{{ _("Inconnu") }}';
+                
+                return `
+                    <div class="activity-item">
+                        <div class="activity-image">
+                            <img src="/static/uploads/${image.filename}" alt="${image.filename}" 
+                                 onerror="this.src='/static/images/placeholder.png'">
+                        </div>
+                        <div class="activity-content">
+                            <div class="activity-header">
+                                <div class="activity-title">${image.filename}</div>
+                                <div class="activity-status ${statusClass}">
+                                    <i class="bi bi-${statusIcon}"></i>
+                                    <span>${statusText}</span>
+                                </div>
+                            </div>
+                            <div class="activity-details">
+                                <small>${image.width}×${image.height} • ${(image.file_size_ko).toFixed(1)} Ko</small>
+                                <small class="activity-time">${formatDate(image.upload_date)}</small>
+                            </div>
+                        </div>
+                        <div class="activity-actions">
+                            <a href="/analysis/${image.id}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+    } catch (error) {
+        console.error('Error loading recent images:', error);
+        document.getElementById('recentActivity').innerHTML = `
+            <div class="activity-error">
+                <i class="bi bi-exclamation-triangle"></i>
+                <p>{{ _('Erreur lors du chargement') }}</p>
+            </div>
+        `;
+    }
+}
+
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+    
+    if (diffMins < 1) return 'À l\'instant';
+    if (diffMins < 60) return `${diffMins} min`;
+    if (diffHours < 24) return `${diffHours}h`;
+    if (diffDays < 7) return `${diffDays}j`;
+    return date.toLocaleDateString();
+}
+
+function centerMap() {
+    if (window.dashboardMap) {
+        window.dashboardMap.setView([48.8566, 2.3522], 12);
+    }
+}
+
+function toggleHeatmap() {
+    console.log('Heatmap toggle functionality');
+}
 </script>
+
+<style>
+.dashboard-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+    margin: 0;
+    position: relative;
+    background: #0a0a0a;
+    padding-top: 6rem; /* Add padding to account for navbar */
+    border-radius: 20px; /* Add rounded corners */
+}
+
+.dashboard-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: #0a0a0a;
+    overflow: hidden;
+    border-radius: 20px; /* Add rounded corners */
+}
+
+.dashboard-topbar {
+    background: rgba(0, 0, 0, 0.9);
+    backdrop-filter: blur(15px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 1rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    position: relative; /* Remove any absolute positioning */
+    z-index: 1;
+    border-radius: 20px 20px 0 0; /* Rounded top corners */
+}
+
+.topbar-left h2 {
+    margin: 0 0 0.25rem 0;
+    font-size: 1.3rem;
+    color: white;
+    font-weight: 600;
+}
+
+.breadcrumb-custom {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.8rem;
+    color: #9ca3af;
+}
+
+.topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.8rem;
+    color: white;
+}
+
+.indicator-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #dc2626;
+}
+
+.indicator-dot.active {
+    background: #15803d;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.location-info {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.8rem;
+    color: #9ca3af;
+}
+
+.stats-header {
+    background: rgba(0, 0, 0, 0.95);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 1rem 1.5rem;
+    display: flex;
+    gap: 2rem;
+    overflow-x: auto;
+    border-radius: 0; /* Keep straight for middle section */
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 120px;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 0.75rem;
+    border-radius: 15px; /* Add rounded corners to stat items */
+    transition: all 0.3s ease;
+}
+
+.stat-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+}
+
+.stat-icon {
+    width: 40px;
+    height: 40px;
+    background: rgba(21, 128, 61, 0.2);
+    border-radius: 12px; /* More rounded for icons */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    color: #15803d;
+    flex-shrink: 0;
+}
+
+.stat-icon.danger {
+    background: rgba(220, 38, 38, 0.2);
+    color: #dc2626;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 0.2rem;
+    color: white;
+}
+
+.stat-label {
+    font-size: 0.7rem;
+    color: #9ca3af;
+}
+
+.dashboard-grid {
+    flex: 1;
+    padding: 1.5rem;
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 1rem;
+    overflow: auto;
+    background: #0a0a0a;
+    border-radius: 0 0 20px 20px; /* Rounded bottom corners */
+}
+
+.grid-item {
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 20px; /* More rounded corners */
+    backdrop-filter: blur(15px);
+    overflow: hidden;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.map-container {
+    display: flex;
+    flex-direction: column;
+}
+
+.widget-header {
+    padding: 1rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: white;
+}
+
+.widget-header h3 {
+    margin: 0;
+    font-size: 1rem;
+    color: #1f2937;
+    font-weight: 600;
+}
+
+.dashboard-map {
+    flex: 1;
+    min-height: 500px;
+}
+
+.map-legend {
+    padding: 0.75rem;
+    background: rgba(248, 250, 252, 0.95);
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.8rem;
+    color: #374151;
+}
+
+.legend-color {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.legend-color.clean { background: #15803d; }
+.legend-color.dirty { background: #dc2626; }
+.legend-color.unknown { background: #6b7280; }
+
+.activity-panel {
+    background: rgba(0, 0, 0, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+    border-radius: 20px; /* Add rounded corners */
+}
+
+.activity-panel .widget-header {
+    background: rgba(0, 0, 0, 0.95);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+    border-radius: 20px 20px 0 0; /* Rounded top corners only */
+}
+
+.activity-panel .widget-header h3 {
+    color: white;
+}
+
+.activity-list {
+    max-height: 500px;
+    overflow-y: auto;
+    padding: 1rem;
+    border-radius: 0 0 20px 20px; /* Rounded bottom corners */
+}
+
+.activity-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px; /* Add rounded corners to activity items */
+    margin-bottom: 0.5rem;
+    background: rgba(255, 255, 255, 0.02);
+    transition: all 0.3s ease;
+}
+
+.activity-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    transform: translateX(5px);
+}
+
+.activity-item:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.activity-image {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px; /* More rounded image containers */
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.activity-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.activity-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.25rem;
+}
+
+.activity-title {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: white;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.activity-status {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.7rem;
+    padding: 0.2rem 0.4rem;
+    border-radius: 8px; /* Add rounded corners to status badges */
+}
+
+.activity-status.clean {
+    background: rgba(21, 128, 61, 0.2);
+    color: #15803d;
+}
+
+.activity-status.dirty {
+    background: rgba(220, 38, 38, 0.2);
+    color: #dc2626;
+}
+
+.activity-status.unknown {
+    background: rgba(107, 114, 128, 0.2);
+    color: #9ca3af;
+}
+
+.activity-details {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.7rem;
+    color: #9ca3af;
+}
+
+.activity-actions {
+    flex-shrink: 0;
+}
+
+.activity-empty,
+.activity-error {
+    text-align: center;
+    padding: 2rem;
+    color: #9ca3af;
+}
+
+.activity-empty i,
+.activity-error i {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    display: block;
+}
+
+.control-btn {
+    background: rgba(21, 128, 61, 0.1);
+    border: 1px solid rgba(21, 128, 61, 0.2);
+    border-radius: 10px; /* More rounded control buttons */
+    padding: 0.4rem;
+    color: #15803d;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.control-btn:hover {
+    background: rgba(21, 128, 61, 0.15);
+    color: #15803d;
+    text-decoration: none;
+    transform: scale(1.05);
+}
+
+.activity-panel .control-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: white;
+    border-radius: 10px;
+}
+
+.activity-panel .control-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.map-controls {
+    display: flex;
+    gap: 0.4rem;
+}
+
+/* Custom marker styles */
+.custom-marker-icon {
+    background: transparent !important;
+    border: none !important;
+}
+
+.marker-pin {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    border: 2px solid white;
+    transition: transform 0.2s ease;
+}
+
+.marker-pin:hover {
+    transform: scale(1.1);
+}
+
+.marker-pin.clean {
+    background: #15803d;
+    color: white;
+}
+
+.marker-pin.dirty {
+    background: #dc2626;
+    color: white;
+}
+
+.marker-pin.unknown {
+    background: #6b7280;
+    color: white;
+}
+
+/* Dashboard tooltip */
+.dashboard-tooltip {
+    background: rgba(255, 255, 255, 0.95) !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    border-radius: 12px !important; /* More rounded tooltips */
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15) !important;
+    backdrop-filter: blur(15px) !important;
+    color: #374151 !important;
+    padding: 0 !important;
+}
+
+.tooltip-content {
+    padding: 0.75rem;
+    min-width: 180px;
+    border-radius: 12px;
+}
+
+.tooltip-header {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0.4rem;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.tooltip-status {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0.4rem;
+    padding: 0.4rem;
+    border-radius: 8px; /* Add rounded corners to tooltip status */
+}
+
+.tooltip-status.clean {
+    background: rgba(21, 128, 61, 0.1);
+    color: #15803d;
+}
+
+.tooltip-status.dirty {
+    background: rgba(220, 38, 38, 0.1);
+    color: #dc2626;
+}
+
+.tooltip-date {
+    font-size: 0.7rem;
+    color: #6b7280;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .dashboard-container {
+        padding-top: 5rem; /* Adjust for smaller navbar on mobile */
+        border-radius: 15px; /* Slightly less rounded on mobile */
+    }
+    
+    .dashboard-main {
+        border-radius: 15px;
+    }
+    
+    .dashboard-topbar {
+        border-radius: 15px 15px 0 0;
+    }
+    
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+        padding: 1rem;
+        border-radius: 0 0 15px 15px;
+    }
+    
+    .grid-item {
+        border-radius: 15px;
+    }
+    
+    .activity-panel {
+        border-radius: 15px;
+    }
+    
+    .activity-panel .widget-header {
+        border-radius: 15px 15px 0 0;
+    }
+    
+    .activity-list {
+        border-radius: 0 0 15px 15px;
+    }
+    
+    .stats-header {
+        padding: 0.75rem;
+        gap: 1rem;
+    }
+    
+    .stat-item {
+        min-width: 100px;
+        border-radius: 12px;
+    }
+    
+    .stat-icon {
+        width: 35px;
+        height: 35px;
+        font-size: 1rem;
+        border-radius: 10px;
+    }
+    
+    .stat-value {
+        font-size: 1.2rem;
+    }
+}
+</style>
 {% endblock %}

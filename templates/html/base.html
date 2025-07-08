@@ -107,10 +107,10 @@
             });
         });
         
-        // Auto-hide alerts
+        // Auto-hide alerts - Only for flash messages, not classification results
         setTimeout(function() {
-            const alerts = document.querySelectorAll('.alert');
-            alerts.forEach(alert => {
+            const flashAlerts = document.querySelectorAll('.alert:not([role="alert"])');
+            flashAlerts.forEach(alert => {
                 const bsAlert = new bootstrap.Alert(alert);
                 bsAlert.close();
             });

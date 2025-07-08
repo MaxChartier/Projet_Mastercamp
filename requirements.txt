@@ -1,6 +1,7 @@
-Pillow>=10.0.0
-opencv-python>=4.8.0
-numpy>=1.24.0
-matplotlib>=3.7.0
-Flask>=2.3.0
-Werkzeug>=2.3.0
+Flask==2.3.3
+Pillow==10.0.1
+matplotlib==3.7.2
+numpy==1.24.3
+opencv-python==4.8.1.78
+ultralytics==8.0.196
+Werkzeug==2.3.7

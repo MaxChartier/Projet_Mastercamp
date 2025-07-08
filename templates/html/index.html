@@ -17,6 +17,125 @@
             </p>
         </div>
 
+        <!-- Statistiques de la plateforme -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <span>{{ _('Statistiques de la Plateforme') }}</span>
+                    <i class="bi bi-bar-chart"></i>
+                </h5>
+            </div>
+            <div class="card-body">
+                <!-- Basic Statistics -->
+                <div class="row mb-4" id="statsContainer">
+                    <div class="col-md-3">
+                        <div class="metric-box">
+                            <div class="metric-value" id="totalImages">-</div>
+                            <div class="metric-label">{{ _('Images Analysées') }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="metric-box">
+                            <div class="metric-value" id="totalSize">-</div>
+                            <div class="metric-label">{{ _('Taille Totale (MB)') }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="metric-box">
+                            <div class="metric-value" id="savedSize">-</div>
+                            <div class="metric-label">{{ _('Espace Économisé (MB)') }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="metric-box">
+                            <div class="metric-value" id="co2Saved">-</div>
+                            <div class="metric-label">{{ _('CO₂ Économisé (g)') }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Energy Efficiency Section -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h6 class="mb-3">{{ _('Efficacité Énergétique') }}</h6>
+                        <div class="energy-efficiency-container">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="efficiency-metric">
+                                        <i class="bi bi-lightning-charge text-success fs-3"></i>
+                                        <div class="efficiency-content">
+                                            <div class="efficiency-value" id="compressionRatio">0%</div>
+                                            <div class="efficiency-label">{{ _('Compression Moyenne') }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="efficiency-metric">
+                                        <i class="bi bi-hdd text-info fs-3"></i>
+                                        <div class="efficiency-content">
+                                            <div class="efficiency-value" id="storageEfficiency">0%</div>
+                                            <div class="efficiency-label">{{ _('Stockage Optimisé') }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="efficiency-metric">
+                                        <i class="bi bi-leaf text-success fs-3"></i>
+                                        <div class="efficiency-content">
+                                            <div class="efficiency-value" id="compressedImages">0</div>
+                                            <div class="efficiency-label">{{ _('Images Compressées') }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bin Status Distribution -->
+                <div class="row">
+                    <div class="col-12">
+                        <h6 class="mb-3">{{ _('État des Poubelles Analysées') }}</h6>
+                        <div class="bin-status-container">
+                            <!-- Combined status bar -->
+                            <div class="combined-status-bar mb-3">
+                                <div class="status-segment clean" id="cleanSegment" style="width: 0%">
+                                    <span class="status-text" id="cleanPercentageText">0%</span>
+                                </div>
+                                <div class="status-segment dirty" id="dirtySegment" style="width: 0%">
+                                    <span class="status-text" id="dirtyPercentageText">0%</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Status labels and counts -->
+                            <div class="row text-center">
+                                <div class="col-6">
+                                    <div class="status-info clean">
+                                        <i class="bi bi-check-circle-fill me-2"></i>
+                                        <strong id="cleanCount">0</strong>
+                                        <div class="status-label">{{ _('Poubelles Propres') }}</div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="status-info dirty">
+                                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                        <strong id="dirtyCount">0</strong>
+                                        <div class="status-label">{{ _('Poubelles Sales') }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="text-center mt-3">
+                                <small class="text-muted">
+                                    <span id="classificationSummary">{{ _('Aucune donnée de classification disponible') }}</span>
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Carte d'upload -->
         <div class="card mb-4">
             <div class="card-header text-center">
@@ -100,7 +219,7 @@
                             <i class="bi bi-grid-3x3 text-success fs-3 me-3"></i>
                             <div>
                                 <h6 class="mb-1">{{ _('Détection de Contours') }}</h6>
-                                <small class="text-muted">{{ _('Algorithmes Canny et Sobel') }}</small>
+                                <small class="text-muted">{{ _('Algorithmes Canny et Sobel avec visualisations') }}</small>
                             </div>
                         </div>
                     </div>
@@ -111,48 +230,6 @@
                                 <h6 class="mb-1">{{ _('Analyse de Luminance') }}</h6>
                                 <small class="text-muted">{{ _('Histogrammes et statistiques de luminance') }}</small>
                             </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Statistiques de la plateforme -->
-<div class="row mt-5" id="statsRow">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <span>{{ _('Statistiques de la Plateforme') }}</span>
-                    <i class="bi bi-bar-chart"></i>
-                </h5>
-            </div>
-            <div class="card-body text-center">
-                <div class="row" id="statsContainer">
-                    <div class="col-md-3">
-                        <div class="metric-box">
-                            <div class="metric-value" id="totalImages">-</div>
-                            <div class="metric-label">{{ _('Images Analysées') }}</div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="metric-box">
-                            <div class="metric-value" id="totalSize">-</div>
-                            <div class="metric-label">{{ _('Taille Totale (MB)') }}</div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="metric-box">
-                            <div class="metric-value" id="avgWidth">-</div>
-                            <div class="metric-label">{{ _('Largeur Moyenne') }}</div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="metric-box">
-                            <div class="metric-value" id="avgHeight">-</div>
-                            <div class="metric-label">{{ _('Hauteur Moyenne') }}</div>
                         </div>
                     </div>
                 </div>
@@ -228,14 +305,59 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function loadStats() {
         try {
-            const response = await fetch('/api/stats');
-            const stats = await response.json();
+            const [statsResponse, compressionResponse] = await Promise.all([
+                fetch('/api/stats'),
+                fetch('/api/compression-stats')
+            ]);
             
-            // Mettre à jour les statistiques
+            const stats = await statsResponse.json();
+            const compressionStats = await compressionResponse.json();
+            
+            // Mettre à jour les statistiques de base
             document.getElementById('totalImages').textContent = stats.total_images;
-            document.getElementById('totalSize').textContent = stats.total_size_mb.toFixed(1);
-            document.getElementById('avgWidth').textContent = Math.round(stats.avg_width) + ' px';
-            document.getElementById('avgHeight').textContent = Math.round(stats.avg_height) + ' px';
+            
+            // Update energy efficiency metrics
+            document.getElementById('compressionRatio').textContent = compressionStats.avg_compression_ratio.toFixed(1) + '%';
+            document.getElementById('storageEfficiency').textContent = compressionStats.energy_efficiency.storage_saved_percent.toFixed(1) + '%';
+            document.getElementById('compressedImages').textContent = compressionStats.compressed_images;
+            
+            // Update compression info in stats
+            document.getElementById('totalSize').textContent = compressionStats.total_compressed_mb.toFixed(1);
+            document.getElementById('savedSize').textContent = compressionStats.total_saved_mb.toFixed(1);
+            document.getElementById('co2Saved').textContent = (compressionStats.energy_efficiency.estimated_co2_saved_kg * 1000).toFixed(1);
+            
+            // Debug logging
+            console.log('Compression Stats:', compressionStats);
+            
+            // Mettre à jour les statistiques de classification
+            const binStatus = stats.bin_status;
+            const totalClassified = binStatus.total_classified;
+            
+            document.getElementById('cleanCount').textContent = binStatus.clean;
+            document.getElementById('dirtyCount').textContent = binStatus.dirty;
+            
+            if (totalClassified > 0) {
+                // Calculer les pourcentages
+                const cleanPercentage = (binStatus.clean / totalClassified) * 100;
+                const dirtyPercentage = (binStatus.dirty / totalClassified) * 100;
+                
+                // Mettre à jour la barre combinée
+                document.getElementById('cleanSegment').style.width = cleanPercentage + '%';
+                document.getElementById('dirtySegment').style.width = dirtyPercentage + '%';
+                
+                // Mettre à jour les textes de pourcentage
+                document.getElementById('cleanPercentageText').textContent = cleanPercentage.toFixed(1) + '%';
+                document.getElementById('dirtyPercentageText').textContent = dirtyPercentage.toFixed(1) + '%';
+                
+                // Mettre à jour le résumé
+                document.getElementById('classificationSummary').textContent = 
+                    `${totalClassified} {{ _('poubelles classifiées') }} - ${cleanPercentage.toFixed(1)}% {{ _('propres') }}, ${dirtyPercentage.toFixed(1)}% {{ _('sales') }}`;
+            } else {
+                document.getElementById('classificationSummary').textContent = 
+                    '{{ _("Aucune poubelle classifiée pour le moment") }}';
+                document.getElementById('cleanPercentageText').textContent = '0%';
+                document.getElementById('dirtyPercentageText').textContent = '0%';
+            }
         } catch (error) {
             console.error('Erreur lors du chargement des statistiques:', error);
             // Valeurs par défaut en cas d'erreur
@@ -243,8 +365,148 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('totalSize').textContent = '0.0';
             document.getElementById('avgWidth').textContent = '0 px';
             document.getElementById('avgHeight').textContent = '0 px';
+            document.getElementById('cleanCount').textContent = '0';
+            document.getElementById('dirtyCount').textContent = '0';
         }
     }
 });
 </script>
+
+<style>
+.bin-status-container {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 15px;
+    padding: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.combined-status-bar {
+    height: 40px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    overflow: hidden;
+    display: flex;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+    position: relative;
+}
+
+.status-segment {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: width 0.8s ease-in-out;
+    position: relative;
+    min-width: 0;
+}
+
+.status-segment.clean {
+    background: linear-gradient(45deg, #22c55e, #16a34a);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.status-segment.dirty {
+    background: linear-gradient(45deg, #ef4444, #dc2626);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.status-text {
+    color: white;
+    font-weight: 600;
+    font-size: 14px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.status-segment[style*="width: 0%"] .status-text {
+    display: none;
+}
+
+.status-segment:not([style*="width: 0%"]) .status-text {
+    opacity: 1;
+}
+
+.status-info {
+    padding: 1rem 0.5rem;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.status-info.clean {
+    color: #22c55e;
+}
+
+.status-info.dirty {
+    color: #ef4444;
+}
+
+.status-info strong {
+    display: block;
+    font-size: 1.5rem;
+    margin-bottom: 0.25rem;
+}
+
+.status-label {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.status-info:hover {
+    background: rgba(255, 255, 255, 0.05);
+    transform: translateY(-2px);
+}
+
+/* Animation for the combined bar */
+@keyframes fillBar {
+    from {
+        width: 0%;
+    }
+}
+
+.status-segment {
+    animation: fillBar 1s ease-out;
+}
+
+.energy-efficiency-container {
+    background: rgba(21, 128, 61, 0.05);
+    border-radius: 15px;
+    padding: 1.5rem;
+    border: 1px solid rgba(21, 128, 61, 0.2);
+}
+
+.efficiency-metric {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.efficiency-metric:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+}
+
+.efficiency-content {
+    flex: 1;
+}
+
+.efficiency-value {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--eco-light);
+    margin-bottom: 0.25rem;
+}
+
+.efficiency-label {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 500;
+}
+</style>
 {% endblock %}
