@@ -154,10 +154,10 @@
                                name="file" 
                                id="fileInput" 
                                class="d-none" 
-                               accept=".png,.jpg,.jpeg,.gif,.bmp,.tiff"
+                               accept="image/*"
                                required>
                         <div class="mt-3">
-                            <button type="button" class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
+                            <button type="button" class="btn btn-primary" onclick="event.stopPropagation(); document.getElementById('fileInput').click()">
                                 <i class="bi bi-folder2-open"></i>
                                 {{ _('Choisir un fichier') }}
                             </button>
@@ -261,7 +261,14 @@ document.addEventListener('DOMContentLoaded', function() {
     loadStats();
 
     // Gestion du drag & drop
-    uploadZone.addEventListener('click', () => fileInput.click());
+    uploadZone.addEventListener('click', (e) => {
+        // Ne pas déclencher si on clique sur un bouton ou un élément à l'intérieur d'un bouton
+        if (e.target.tagName !== 'BUTTON' && 
+            !e.target.closest('button') && 
+            !e.target.classList.contains('btn')) {
+            fileInput.click();
+        }
+    });
     
     uploadZone.addEventListener('dragover', (e) => {
         e.preventDefault();
