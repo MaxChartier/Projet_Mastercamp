@@ -11,25 +11,175 @@
     
     <!-- Custom CSS -->
     <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet" type="text/css">
+    
+    <style>
+        /* Flash Messages Styling */
+        .flash-messages-container {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1050;
+            width: 80%;
+            max-width: 600px;
+            pointer-events: none;
+        }
+        
+        .flash-message {
+            background: rgba(21, 128, 61, 0.95) !important;
+            border: 1px solid rgba(21, 128, 61, 0.7) !important;
+            color: white !important;
+            border-radius: 15px !important;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 8px 32px rgba(21, 128, 61, 0.3) !important;
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            margin-bottom: 10px;
+            pointer-events: auto;
+            animation: slideInDown 0.4s ease-out;
+        }
+        
+        .flash-message i {
+            color: rgba(255, 255, 255, 0.9) !important;
+        }
+        
+        .flash-message .btn-close {
+            filter: invert(1);
+            opacity: 0.8;
+        }
+        
+        .flash-message .btn-close:hover {
+            opacity: 1;
+        }
+        
+        @keyframes slideInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Hover effect for language switcher */
+        .language-switch:hover {
+            opacity: 0.5 !important;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .flash-messages-container {
+                width: 95%;
+                top: 15px;
+            }
+            
+            /* Espacement réduit pour mobile */
+            .main-container {
+                margin-top: 8rem !important;
+            }
+            
+            /* Navbar mobile adjustments */
+            .navbar .container {
+                flex-wrap: nowrap !important;
+                padding: 0.5rem 1rem;
+                align-items: center !important;
+            }
+            
+            .navbar .ms-auto {
+                flex-direction: row !important;
+                align-items: center !important;
+                gap: 1.2rem !important;
+                flex: 1 !important;
+                justify-content: flex-end !important;
+            }
+            
+            .navbar .navbar-nav {
+                display: flex !important; /* Affiche les liens de navigation sur mobile */
+                flex-direction: row !important;
+                gap: 1.2rem !important;
+                align-items: center !important;
+            }
+            
+            /* Cache le texte des liens de navigation sur mobile, garde seulement les icônes */
+            .navbar .navbar-nav .nav-link {
+                font-size: 0 !important; /* Cache le texte */
+                padding: 0.4rem !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                width: 40px !important;
+                height: 40px !important;
+                border-radius: 50% !important;
+                transition: all 0.3s ease !important;
+            }
+            
+            .navbar .navbar-nav .nav-link i {
+                font-size: 1.2rem !important; /* Agrandit les icônes */
+                margin: 0 !important; /* Centre parfaitement l'icône */
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+            }
+            
+            .navbar .navbar-nav .nav-link:hover {
+                background-color: rgba(255, 255, 255, 0.1) !important;
+                transform: scale(1.05) !important;
+            }
+            
+            /* Cache le texte E-BOUEUR sur mobile, garde seulement l'icône */
+            .navbar-brand .brand-text {
+                display: none !important;
+            }
+            
+            /* Cache le texte E-BOUEUR dans le footer sur mobile */
+            .footer .brand-text {
+                display: none !important;
+            }
+            
+            /* Sélecteur de langue repositionné */
+            .navbar .ms-auto > div:last-child {
+                font-size: 0.75rem !important;
+                padding: 0.25rem 0.5rem !important;
+            }
+            
+            .navbar .ms-auto > div:last-child a {
+                font-size: 0.75rem !important;
+                padding: 0.15rem 0.4rem !important;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .navbar .container {
+                padding: 0.4rem 0.75rem;
+            }
+            
+            .navbar-brand {
+                font-size: 1.1rem !important;
+            }
+            
+            .navbar .ms-auto > div:last-child {
+                font-size: 0.7rem !important;
+                padding: 0.2rem 0.4rem !important;
+            }
+            
+            /* Espacement encore plus grand pour très petits écrans */
+            .main-container {
+                margin-top: 9rem !important;
+            }
+        }
+    </style>
 </head>
 <body class="d-flex flex-column min-vh-100">
     <!-- Navigation -->
     <nav class="navbar navbar-dark">
         <div class="container">
-            <div style="display: flex; align-items: center; gap: 1rem;">
-                <!-- Language Switcher Flags -->
-                <a href="{{ url_for('set_language', lang='fr') }}">
-                    <img src="https://flagcdn.com/fr.svg" alt="Français" width="28" style="border-radius: 50%; border: 2px solid {% if lang == 'fr' %}#22c55e{% else %}#ccc{% endif %};">
-                </a>
-                <a href="{{ url_for('set_language', lang='en') }}">
-                    <img src="https://flagcdn.com/gb.svg" alt="English" width="28" style="border-radius: 50%; border: 2px solid {% if lang == 'en' %}#22c55e{% else %}#ccc{% endif %};">
-                </a>
                 <a class="navbar-brand" href="{{ url_for('index') }}">
-                    <i class="bi bi-recycle"></i>
-                    E-BOUEUR
+                <i class="bi bi-recycle" style="color: #15803d; font-size: 1.2rem; margin-right: 0.2rem;"></i>
+                    <span class="brand-text">E-BOUEUR</span>
                 </a>
-            </div>
-            <ul class="navbar-nav">
+            <div class="ms-auto d-flex align-items-center gap-3">
+                <ul class="navbar-nav" style="flex-direction: row; gap: 1.5rem; margin: 0;">
                 <li class="nav-item">
                     <a class="nav-link" href="{{ url_for('index') }}">
                         <i class="bi bi-house"></i> {{ _('Accueil') }}
@@ -46,15 +196,24 @@
                     </a>
                 </li>
             </ul>
+                <!-- Language Switcher -->
+                <div class="d-flex align-items-center bg-dark bg-opacity-25 px-2 py-1 rounded-pill border border-secondary border-opacity-25">
+                    {% if lang == 'fr' %}
+                        <a href="{{ url_for('set_language', lang='en') }}" class="text-decoration-none text-light opacity-75 fw-bold px-2 py-1 rounded-pill language-switch" style="font-size: 0.85rem; transition: opacity 0.3s;">EN</a>
+                    {% else %}
+                        <a href="{{ url_for('set_language', lang='fr') }}" class="text-decoration-none text-light opacity-75 fw-bold px-2 py-1 rounded-pill language-switch" style="font-size: 0.85rem; transition: opacity 0.3s;">FR</a>
+                    {% endif %}
+                </div>
+            </div>
         </div>
     </nav>
 
     <!-- Flash Messages -->
     {% with messages = get_flashed_messages() %}
         {% if messages %}
-            <div class="container mt-3">
+            <div class="flash-messages-container">
                 {% for message in messages %}
-                    <div class="alert alert-info alert-dismissible fade show" role="alert">
+                    <div class="alert alert-info alert-dismissible fade show flash-message" role="alert">
                         <i class="bi bi-info-circle"></i> {{ message }}
                         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
@@ -72,8 +231,8 @@
     <footer class="footer">
         <div class="container d-flex justify-content-center align-items-center gap-3">
             <div class="d-flex align-items-center">
-                <i class="bi bi-recycle" style="color: var(--eco-light); font-size: 1.2rem; margin-right: 0.4rem;"></i>
-                <span style="color: rgba(255, 255, 255, 0.95); font-weight: 600; font-size: 1rem;">E-BOUEUR</span>
+                <i class="bi bi-recycle" style="color: #15803d; font-size: 1.2rem; margin-right: 0.4rem;"></i>
+                <span class="brand-text" style="color: rgba(255, 255, 255, 0.95); font-weight: 600; font-size: 1rem;">E-BOUEUR</span>
             </div>
             <p class="mb-0" style="font-size: 0.8rem;">
                 © 2025 E-Boueur | L'Analyseur Écologique d'Images

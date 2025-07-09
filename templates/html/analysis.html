@@ -3,6 +3,13 @@
 {% block title %}{{ _('Analyse de') }} {{ image.filename }} - E-BOUEUR{% endblock %}
 
 {% block content %}
+<!-- Fixed page indicator -->
+<div class="page-indicator-fixed">
+    <span class="badge badge-glassmorphism">
+        {{ current_position }} / {{ total_images }}
+    </span>
+</div>
+
 <!-- Navigation arrows for analysis -->
 <div class="analysis-navigation">
     {% if prev_image_id %}
@@ -23,12 +30,7 @@
         </a>
     {% endif %}
     
-    <!-- Position indicator -->
-    <div class="position-indicator">
-        <span class="badge badge-glassmorphism">
-            {{ current_position }} / {{ total_images }}
-        </span>
-    </div>
+
 </div>
 
 <div class="row">
@@ -56,9 +58,8 @@
             <div class="card-body text-center card-body-compact">
                 <img src="{{ url_for('static', filename='uploads/' + image.filename) }}" 
                      class="image-preview image-preview-compact mb-3"
-                     onerror="console.log('Failed to load image in analysis: {{ image.filename }}'); this.src='{{ url_for('static', filename='images/placeholder.png') }}'; this.alt='Image non disponible';"
-                     alt="{{ image.filename }}"
-                     onload="console.log('Successfully loaded image in analysis: {{ image.filename }}');">
+                     onerror="this.src='/static/images/placeholder.png'; this.alt='Image non disponible';"
+                     alt="{{ image.filename }}">
                 <h6>{{ image.filename }}</h6>
                 <small class="text-muted">
                     {% if image.upload_date %}
@@ -149,7 +150,7 @@
             <div class="card-header">
                 <h5 class="mb-0">
                     <span>{{ _('Classification de la Poubelle') }}</span>
-                    <i class="bi bi-robot"></i>
+                    <i class="bi bi-check-circle"></i>
                 </h5>
             </div>
             <div class="card-body">
@@ -295,28 +296,40 @@
             <div class="card-body">
                 {% if contrast_analysis %}
                     <div class="row">
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <div class="metric-box">
                                 <div class="metric-value">{{ "%.1f"|format(contrast_analysis.min_intensity) }}</div>
                                 <div class="metric-label">{{ _('Intensité Min') }}</div>
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <div class="metric-box">
                                 <div class="metric-value">{{ "%.1f"|format(contrast_analysis.max_intensity) }}</div>
                                 <div class="metric-label">{{ _('Intensité Max') }}</div>
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
+                            <div class="metric-box">
+                                <div class="metric-value">{{ "%.1f"|format(contrast_analysis.mean_intensity or 0) }}</div>
+                                <div class="metric-label">{{ _('Intensité Moyenne') }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
                             <div class="metric-box">
                                 <div class="metric-value">{{ "%.1f"|format(contrast_analysis.contrast_level) }}</div>
                                 <div class="metric-label">{{ _('Niveau de Contraste') }}</div>
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <div class="metric-box">
-                                <div class="metric-value">{{ "%.1f%%"|format(contrast_analysis.contrast_ratio * 100) }}</div>
+                                <div class="metric-value">{{ "%.1f%%"|format((contrast_analysis.contrast_ratio or 0) * 100) }}</div>
                                 <div class="metric-label">{{ _('Ratio de Contraste') }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="metric-box">
+                                <div class="metric-value">{{ "%.3f"|format(contrast_analysis.rms_contrast or 0) }}</div>
+                                <div class="metric-label">{{ _('Contraste RMS') }}</div>
                             </div>
                         </div>
                     </div>
@@ -525,13 +538,13 @@
 <div class="row">
     <div class="col-12 text-center">
         {% if prev_image_id %}
-            <a href="{{ url_for('view_analysis', image_id=prev_image_id) }}" class="btn btn-secondary me-2">
+            <a href="{{ url_for('view_analysis', image_id=prev_image_id) }}" class="btn btn-secondary me-2 mb-2 mb-md-0">
                 <i class="bi bi-arrow-left"></i>
                 {{ _('Image Précédente') }}
             </a>
         {% endif %}
         
-        <a href="{{ url_for('index') }}" class="btn btn-primary me-2">
+        <a href="{{ url_for('index') }}#upload-section" class="btn btn-primary me-2">
             <i class="bi bi-plus-circle"></i>
             {{ _('Analyser une Autre Image') }}
         </a>
@@ -596,20 +609,20 @@ document.addEventListener('DOMContentLoaded', function() {
         map.off('click');
         
         // Create status popup
-        var statusText = "{{ _('Statut Inconnu') }}";
+        var statusText = "Unknown Status";
         var statusClass = 'status-unknown';
         
         {% if image.prediction == 'clean' %}
-            statusText = "{{ _('Poubelle Propre') }}";
+            statusText = "Clean Bin";
             statusClass = 'status-clean';
         {% elif image.prediction == 'dirty' %}
-            statusText = "{{ _('Poubelle Sale') }}";
+            statusText = "Dirty Bin";
             statusClass = 'status-dirty';
         {% endif %}
         
         var confidenceText = '';
         {% if image.prediction_confidence %}
-            confidenceText = '<br><small>' + "{{ _('Confiance:') }}" + ' {{ "%.1f%%"|format(image.prediction_confidence * 100) }}</small>';
+            confidenceText = '<br><small>Confidence: {{ "%.1f%%"|format(image.prediction_confidence * 100) }}</small>';
         {% endif %}
         
         var popupContent = '<div style="text-align: center; min-width: 180px;">' +
@@ -673,16 +686,7 @@ function showNavigationHints() {
     // Create a temporary notification for keyboard shortcuts
     const notification = document.createElement('div');
     notification.className = 'navigation-hint';
-    notification.innerHTML = `
-        <div class="alert alert-info" style="position: fixed; top: 100px; right: 20px; z-index: 1050; max-width: 300px;">
-            <strong>{{ _('Navigation:') }}</strong><br>
-            <small>
-                ← → {{ _('Images précédente/suivante') }}<br>
-                ESC/G {{ _('Retour à la galerie') }}<br>
-                H {{ _('Retour à l\'accueil') }}
-            </small>
-        </div>
-    `;
+    notification.innerHTML = '<div class="alert alert-info" style="position: fixed; top: 100px; right: 20px; z-index: 1050; max-width: 300px;"><strong>Navigation:</strong><br><small>← → Images précédente/suivante<br>ESC/G Retour à la galerie<br>H Retour à l\'accueil</small></div>';
     
     document.body.appendChild(notification);
     
@@ -777,17 +781,27 @@ function showNavigationHints() {
     right: 20px;
 }
 
-.position-indicator {
+
+
+.page-indicator-fixed {
     position: fixed;
-    top: 120px;
+    top: 20px;
     right: 20px;
-    z-index: 100;
+    z-index: 1100;
     pointer-events: none;
 }
 
-.position-indicator .badge {
-    font-size: 0.9rem;
-    padding: 0.5rem 1rem;
+.page-indicator-fixed .badge {
+    font-size: 1rem;
+    padding: 0.6rem 1.2rem;
+    background: rgba(21, 128, 61, 0.95) !important;
+    border: 1px solid rgba(21, 128, 61, 0.7) !important;
+    color: white !important;
+    border-radius: 15px !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 8px 32px rgba(21, 128, 61, 0.3) !important;
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    font-weight: 600;
     pointer-events: auto;
 }
 
@@ -823,14 +837,24 @@ function showNavigationHints() {
         right: 10px;
     }
     
-    .position-indicator {
-        top: 90px;
-        right: 10px;
+    .page-indicator-fixed {
+        top: 15px;
+        right: 15px;
     }
     
-    .position-indicator .badge {
-        font-size: 0.8rem;
-        padding: 0.4rem 0.8rem;
+    .page-indicator-fixed .badge {
+        font-size: 0.9rem;
+        padding: 0.5rem 1rem;
+    }
+    
+    /* Button spacing for action buttons */
+    .btn.me-2 {
+        margin-bottom: 0.5rem !important;
+    }
+    
+    /* Specific spacing for previous image button */
+    .btn.btn-secondary.me-2:first-of-type {
+        margin-bottom: 1rem !important;
     }
 }
 

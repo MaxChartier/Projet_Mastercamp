@@ -5,14 +5,16 @@
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-lg-8">
+
+
         <!-- Logo principal -->
         <div class="text-center d-flex flex-column justify-content-center" style="min-height: 90vh; margin-bottom: 3rem;">
-            <h1 class="mb-3" style="color: rgba(255, 255, 255, 0.95); font-weight: 600; font-size: 5rem;">
-                <i class="bi bi-recycle" style="color: var(--eco-light); margin-right: 0.5rem; font-size: 5rem;"></i>
-                E-BOUEUR
+            <h1 class="mb-3 slide-up-animation" id="main-title" style="color: rgba(255, 255, 255, 0.95); font-weight: 600; font-size: 5rem; position: relative;">
+                <i class="bi bi-recycle" id="recycle-icon" style="color: #15803d; font-size: 4.5rem; margin-right: 0.3rem;"></i>
+                <span id="title-text">E-BOUEUR</span>
             </h1>
-            <p class="lead text-muted">
-                {{ _('Téléchargez vos images pour une analyse complète des caractéristiques :') }}<br>
+            <p class="lead text-muted slide-up-animation" id="main-subtitle" style="animation-delay: 0.3s; margin-top: 3rem;">
+                {{ _('Téléchargez vos images pour une analyse complète des caractéristiques') }}<br>
                 {{ _('Couleurs, Contraste, Contours et Luminance') }}
             </p>
         </div>
@@ -62,7 +64,7 @@
                             <div class="row">
                                 <div class="col-md-4">
                                     <div class="efficiency-metric">
-                                        <i class="bi bi-lightning-charge text-success fs-3"></i>
+                                        <i class="bi bi-lightning-charge fs-3"></i>
                                         <div class="efficiency-content">
                                             <div class="efficiency-value" id="compressionRatio">0%</div>
                                             <div class="efficiency-label">{{ _('Compression Moyenne') }}</div>
@@ -71,7 +73,7 @@
                                 </div>
                                 <div class="col-md-4">
                                     <div class="efficiency-metric">
-                                        <i class="bi bi-hdd text-info fs-3"></i>
+                                        <i class="bi bi-hdd fs-3"></i>
                                         <div class="efficiency-content">
                                             <div class="efficiency-value" id="storageEfficiency">0%</div>
                                             <div class="efficiency-label">{{ _('Stockage Optimisé') }}</div>
@@ -80,7 +82,7 @@
                                 </div>
                                 <div class="col-md-4">
                                     <div class="efficiency-metric">
-                                        <i class="bi bi-leaf text-success fs-3"></i>
+                                        <i class="bi bi-images fs-3"></i>
                                         <div class="efficiency-content">
                                             <div class="efficiency-value" id="compressedImages">0</div>
                                             <div class="efficiency-label">{{ _('Images Compressées') }}</div>
@@ -111,15 +113,13 @@
                             <div class="row text-center">
                                 <div class="col-6">
                                     <div class="status-info clean">
-                                        <i class="bi bi-check-circle-fill me-2"></i>
-                                        <strong id="cleanCount">0</strong>
+                                        <strong><i class="bi bi-check-circle-fill me-2"></i><span id="cleanCount">0</span></strong>
                                         <div class="status-label">{{ _('Poubelles Propres') }}</div>
                                     </div>
                                 </div>
                                 <div class="col-6">
                                     <div class="status-info dirty">
-                                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                                        <strong id="dirtyCount">0</strong>
+                                        <strong><i class="bi bi-exclamation-triangle-fill me-2"></i><span id="dirtyCount">0</span></strong>
                                         <div class="status-label">{{ _('Poubelles Sales') }}</div>
                                     </div>
                                 </div>
@@ -137,7 +137,7 @@
         </div>
 
         <!-- Carte d'upload -->
-        <div class="card mb-4">
+        <div class="card mb-4" id="upload-section">
             <div class="card-header text-center">
                 <h3 class="mb-0">
                     <span>{{ _('Télécharger une Image') }}</span>
@@ -171,8 +171,8 @@
                     <div id="imagePreview" class="mt-4 text-center" style="display: none;">
                         <h5>{{ _('Aperçu :') }}</h5>
                         <img id="previewImg" class="image-preview" style="max-height: 300px;">
-                        <div class="mt-3">
-                            <button type="submit" class="btn btn-success btn-lg">
+                        <div class="mt-2">
+                            <button type="submit" class="btn btn-success btn-lg me-2">
                                 <i class="bi bi-graph-up"></i>
                                 {{ _('Analyser l\'Image') }}
                             </button>
@@ -198,7 +198,7 @@
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <div class="d-flex align-items-center">
-                            <i class="bi bi-palette text-primary fs-3 me-3"></i>
+                            <i class="bi bi-palette fs-3 me-3" style="color: rgba(255, 255, 255, 0.8);"></i>
                             <div>
                                 <h6 class="mb-1">{{ _('Analyse des Couleurs') }}</h6>
                                 <small class="text-muted">{{ _('Couleurs moyennes RGB, luminosité globale') }}</small>
@@ -207,7 +207,7 @@
                     </div>
                     <div class="col-md-6 mb-3">
                         <div class="d-flex align-items-center">
-                            <i class="bi bi-sliders text-primary fs-3 me-3"></i>
+                            <i class="bi bi-sliders fs-3 me-3" style="color: rgba(255, 255, 255, 0.8);"></i>
                             <div>
                                 <h6 class="mb-1">{{ _('Analyse du Contraste') }}</h6>
                                 <small class="text-muted">{{ _('Niveaux de contraste par canal et global') }}</small>
@@ -216,7 +216,7 @@
                     </div>
                     <div class="col-md-6 mb-3">
                         <div class="d-flex align-items-center">
-                            <i class="bi bi-grid-3x3 text-success fs-3 me-3"></i>
+                            <i class="bi bi-grid-3x3 fs-3 me-3" style="color: rgba(255, 255, 255, 0.8);"></i>
                             <div>
                                 <h6 class="mb-1">{{ _('Détection de Contours') }}</h6>
                                 <small class="text-muted">{{ _('Algorithmes Canny et Sobel avec visualisations') }}</small>
@@ -225,7 +225,7 @@
                     </div>
                     <div class="col-md-6 mb-3">
                         <div class="d-flex align-items-center">
-                            <i class="bi bi-brightness-high text-info fs-3 me-3"></i>
+                            <i class="bi bi-brightness-high fs-3 me-3" style="color: rgba(255, 255, 255, 0.8);"></i>
                             <div>
                                 <h6 class="mb-1">{{ _('Analyse de Luminance') }}</h6>
                                 <small class="text-muted">{{ _('Histogrammes et statistiques de luminance') }}</small>
@@ -242,6 +242,15 @@
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Scroll fluide vers la section upload si l'ancre est présente
+    if (window.location.hash === '#upload-section') {
+        setTimeout(() => {
+            document.getElementById('upload-section').scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+        }, 100);
+    }
     const uploadZone = document.getElementById('uploadZone');
     const fileInput = document.getElementById('fileInput');
     const imagePreview = document.getElementById('imagePreview');
@@ -507,6 +516,96 @@ document.addEventListener('DOMContentLoaded', function() {
     font-size: 0.8rem;
     color: rgba(255, 255, 255, 0.7);
     font-weight: 500;
+}
+
+/* Animations d'entrée slide-up */
+.slide-up-animation {
+    opacity: 0;
+    transform: translateY(50px);
+    animation: slideUpFadeIn 1.2s ease-out forwards;
+}
+
+@keyframes slideUpFadeIn {
+    0% {
+        opacity: 0;
+        transform: translateY(50px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Animation pour le titre principal avec effet doux */
+#main-title {
+    animation: slideUpFadeInSoft 1.2s ease-out forwards;
+}
+
+/* Animation pour le sous-titre avec effet plus doux */
+#main-subtitle {
+    animation: slideUpFadeInSoft 1.2s ease-out forwards;
+}
+
+@keyframes slideUpFadeInSoft {
+    0% {
+        opacity: 0;
+        transform: translateY(40px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive design pour mobile - icône en arrière-plan */
+@media (max-width: 768px) {
+    #main-title {
+        font-size: 3.5rem !important;
+        line-height: 1.2;
+    }
+    
+    #recycle-icon {
+        position: absolute !important;
+        left: 50% !important;
+        top: 50% !important;
+        transform: translate(-50%, -50%) !important;
+        font-size: 12rem !important;
+        opacity: 1 !important;
+        margin-right: 0 !important;
+        z-index: -1 !important;
+        color: #15803d !important;
+    }
+    
+    #title-text {
+        position: relative;
+        z-index: 1;
+        display: block;
+        width: 100%;
+        text-align: center;
+        text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.7), 0 0 20px rgba(0, 0, 0, 0.5);
+        font-weight: 700;
+    }
+    
+    #main-subtitle {
+        margin-top: 3.5rem !important;
+        position: relative;
+        z-index: 2;
+    }
+}
+
+@media (max-width: 480px) {
+    #main-title {
+        font-size: 2.8rem !important;
+    }
+    
+    #recycle-icon {
+        font-size: 10rem !important;
+        opacity: 1 !important;
+    }
+    
+    #main-subtitle {
+        margin-top: 3rem !important;
+    }
 }
 </style>
 {% endblock %}

@@ -112,56 +112,89 @@ def plot_color_histogram(img_array, bins=256):
     plt.show()
 
 def get_contrast_level(img_array):
+    """
+    Calcule plusieurs métriques de contraste plus robustes :
+    - Contraste RMS (Root Mean Square)
+    - Écart-type
+    - Contraste Michelson (pour range)
+    """
+    
     # image en niveaux de gris
     if len(img_array.shape) == 2:
-        min_val = float(np.min(img_array))
-        max_val = float(np.max(img_array))
-        contrast = max_val - min_val
+        gray = img_array.astype(float)
+        
+        # Métriques de contraste
+        min_val = float(np.min(gray))
+        max_val = float(np.max(gray))
+        mean_val = float(np.mean(gray))
+        std_val = float(np.std(gray))
+        
+        # Contraste RMS (plus représentatif)
+        rms_contrast = std_val / mean_val if mean_val > 0 else 0
+        
+        # Contraste Michelson
+        michelson_contrast = (max_val - min_val) / (max_val + min_val) if (max_val + min_val) > 0 else 0
         
         return {
             'mode': 'grayscale',
-            'min_intensity': min_val,
-            'max_intensity': max_val,
-            'contrast_level': round(contrast, 2),
-            'contrast_ratio': round(contrast / 255.0, 3)
+            'min_intensity': round(min_val, 1),
+            'max_intensity': round(max_val, 1),
+            'mean_intensity': round(mean_val, 1),
+            'std_intensity': round(std_val, 1),
+            'contrast_level': round(std_val, 1),  # Utiliser écart-type comme niveau de contraste
+            'contrast_ratio': round(michelson_contrast, 3),
+            'rms_contrast': round(rms_contrast, 3)
         }
     
     # image RGB/couleur
     elif len(img_array.shape) == 3 and img_array.shape[2] >= 3:
-        # contraste pour chaque canal
-        red_min, red_max = float(np.min(img_array[:, :, 0])), float(np.max(img_array[:, :, 0]))
-        green_min, green_max = float(np.min(img_array[:, :, 1])), float(np.max(img_array[:, :, 1]))
-        blue_min, blue_max = float(np.min(img_array[:, :, 2])), float(np.max(img_array[:, :, 2]))
+        # Analyser chaque canal séparément
+        channels_data = {}
+        channel_names = ['red', 'green', 'blue']
         
-        # contraste global (conversion en niveaux de gris)
-        gray = cv2.cvtColor(img_array.astype('uint8'), cv2.COLOR_RGB2GRAY)
-        global_min, global_max = float(np.min(gray)), float(np.max(gray))
-        global_contrast = global_max - global_min
+        for i, channel_name in enumerate(channel_names):
+            channel = img_array[:, :, i].astype(float)
+            min_val = float(np.min(channel))
+            max_val = float(np.max(channel))
+            mean_val = float(np.mean(channel))
+            std_val = float(np.std(channel))
+            
+            # Contraste RMS pour ce canal
+            rms_contrast = std_val / mean_val if mean_val > 0 else 0
+            
+            channels_data[channel_name] = {
+                'min': round(min_val, 1),
+                'max': round(max_val, 1),
+                'mean': round(mean_val, 1),
+                'std': round(std_val, 1),
+                'contrast (RMS)': round(rms_contrast, 3),
+                'contrast (Diff max-min)': round(max_val - min_val, 1)
+            }
+        
+        # Contraste global (conversion en niveaux de gris)
+        gray = cv2.cvtColor(img_array.astype('uint8'), cv2.COLOR_RGB2GRAY).astype(float)
+        global_min = float(np.min(gray))
+        global_max = float(np.max(gray))
+        global_mean = float(np.mean(gray))
+        global_std = float(np.std(gray))
+        
+        # Contraste RMS global
+        global_rms_contrast = global_std / global_mean if global_mean > 0 else 0
+        
+        # Contraste Michelson global
+        global_michelson = (global_max - global_min) / (global_max + global_min) if (global_max + global_min) > 0 else 0
         
         return {
             'mode': 'rgb',
-            'channels': {
-                'red': {
-                    'min': red_min,
-                    'max': red_max,
-                    'contrast (Diff max-min)': round(red_max - red_min, 2)
-                },
-                'green': {
-                    'min': green_min,
-                    'max': green_max,
-                    'contrast (Diff max-min)': round(green_max - green_min, 2)
-                },
-                'blue': {
-                    'min': blue_min,
-                    'max': blue_max,
-                    'contrast (Diff max-min)': round(blue_max - blue_min, 2)
-                }
-            },
+            'channels': channels_data,
             'global_contrast': {
-                'min_intensity': global_min,
-                'max_intensity': global_max,
-                'contrast_level': round(global_contrast, 2),
-                'contrast_ratio': round(global_contrast / 255.0, 3)
+                'min_intensity': round(global_min, 1),
+                'max_intensity': round(global_max, 1),
+                'mean_intensity': round(global_mean, 1),
+                'std_intensity': round(global_std, 1),
+                'contrast_level': round(global_std, 1),  # Utiliser écart-type
+                'contrast_ratio': round(global_michelson, 3),
+                'rms_contrast': round(global_rms_contrast, 3)
             }
         }
 

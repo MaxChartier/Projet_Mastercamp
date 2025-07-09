@@ -13,7 +13,7 @@ matplotlib.use('Agg')  # Backend non-interactif pour matplotlib
 import matplotlib.pyplot as plt
 import random
 
-# Load YOLO model for bin classification with graceful error handling
+# Load YOLO 
 MODEL_PATH = 'yolo11clsFineTuned.pt'
 try:
     from ultralytics import YOLO
@@ -64,19 +64,15 @@ def predict_bin_status(image_path):
         }
     
     try:
-        # Run prediction
         results = yolo_model.predict(image_path, verbose=False)
         
         if results and len(results) > 0:
             result = results[0]
             
-            # Get the class names and predictions
             if hasattr(result, 'probs') and result.probs is not None:
-                # For classification tasks
                 class_id = result.probs.top1
                 confidence = float(result.probs.top1conf)
                 
-                # Map class names (adjust according to your model's classes)
                 class_names = result.names if hasattr(result, 'names') else {0: 'clean', 1: 'dirty'}
                 prediction = class_names.get(class_id, 'unknown')
                 
@@ -137,7 +133,6 @@ def analyze_and_store_image(filepath_or_filename, filename):
         
         print(f"Compression settings: quality={compression_settings['quality']}, max_size={compression_settings['max_size']}")
         
-        # Always compress image for energy efficiency
         print(f"Compressing image {filename} for energy efficiency...")
         compression_stats = compress_image(
             filepath,
@@ -152,16 +147,14 @@ def analyze_and_store_image(filepath_or_filename, filename):
             print(f"Size reduced by {compression_stats['size_reduction_mb']:.2f} MB")
         else:
             print(f"Compression failed: {compression_stats.get('error', 'Unknown error')}")
-            # Even if compression "failed", we'll use the file as-is but mark it as processed
             compression_stats = {
-                'success': True,  # Mark as success to continue processing
+                'success': True, 
                 'original_size_bytes': original_file_info['bytes'],
                 'compressed_size_bytes': original_file_info['bytes'],
                 'compression_ratio': 0,
                 'was_compressed': False
             }
         
-        # Create thumbnail for gallery view
         thumbnail_dir = os.path.join(app.config['UPLOAD_FOLDER'], 'thumbnails')
         os.makedirs(thumbnail_dir, exist_ok=True)
         thumbnail_path = os.path.join(thumbnail_dir, f"thumb_{filename}")
@@ -170,26 +163,22 @@ def analyze_and_store_image(filepath_or_filename, filename):
         if thumbnail_stats and thumbnail_stats['success']:
             print(f"Thumbnail created: {thumbnail_stats['thumbnail_size_kb']} KB")
         
-        # Get final file info after compression
+
         final_file_info = get_file_size(filepath)
         final_dimensions = get_dimensions(filepath)
-        
-        # YOLO Classification
+
         classification_result = predict_bin_status(filepath)
-        
-        # Open compressed image for analysis
+    
+
         img = Image.open(filepath)
         img_array = np.array(img)
         
-        # Determine the mode of the image
         mode = 'grayscale' if len(img_array.shape) == 2 else 'rgb'
         
-        # Prepare compression data with fallbacks
         original_size_bytes = compression_stats.get('original_size_bytes', original_file_info['bytes'])
         compressed_size_bytes = compression_stats.get('compressed_size_bytes', final_file_info['bytes'])
         compression_ratio = compression_stats.get('compression_ratio', 0)
         
-        # Calculate compression ratio if not provided
         if compression_ratio == 0 and original_size_bytes > 0 and original_size_bytes != compressed_size_bytes:
             compression_ratio = (original_size_bytes - compressed_size_bytes) / original_size_bytes * 100
         
@@ -231,11 +220,13 @@ def analyze_and_store_image(filepath_or_filename, filename):
         if mode == 'grayscale':
             conn.execute('''
                 INSERT INTO contrast_analysis (image_id, mode, min_intensity, max_intensity, 
-                                             contrast_level, contrast_ratio)
-                VALUES (?, ?, ?, ?, ?, ?)
+                                             mean_intensity, std_intensity, contrast_level, 
+                                             contrast_ratio, rms_contrast)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (image_id, contrast_info['mode'], contrast_info['min_intensity'],
-                  contrast_info['max_intensity'], contrast_info['contrast_level'],
-                  contrast_info['contrast_ratio']))
+                  contrast_info['max_intensity'], contrast_info['mean_intensity'],
+                  contrast_info['std_intensity'], contrast_info['contrast_level'],
+                  contrast_info['contrast_ratio'], contrast_info['rms_contrast']))
         else:
             global_contrast = contrast_info['global_contrast']
             red_contrast = contrast_info['channels']['red']['contrast (Diff max-min)']
@@ -244,12 +235,15 @@ def analyze_and_store_image(filepath_or_filename, filename):
             
             conn.execute('''
                 INSERT INTO contrast_analysis (image_id, mode, min_intensity, max_intensity,
-                                             contrast_level, contrast_ratio, red_contrast,
+                                             mean_intensity, std_intensity, contrast_level, 
+                                             contrast_ratio, rms_contrast, red_contrast,
                                              green_contrast, blue_contrast)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (image_id, contrast_info['mode'], global_contrast['min_intensity'],
-                  global_contrast['max_intensity'], global_contrast['contrast_level'],
-                  global_contrast['contrast_ratio'], red_contrast, green_contrast, blue_contrast))
+                  global_contrast['max_intensity'], global_contrast['mean_intensity'],
+                  global_contrast['std_intensity'], global_contrast['contrast_level'],
+                  global_contrast['contrast_ratio'], global_contrast['rms_contrast'],
+                  red_contrast, green_contrast, blue_contrast))
         
         # Détection de contours (Canny et Sobel)
         for method in ['canny', 'sobel']:
@@ -382,7 +376,7 @@ TRANSLATIONS = {
         'Statistiques de la Plateforme': 'Statistiques de la Plateforme',
         
         # Home page
-        'Téléchargez vos images pour une analyse complète des caractéristiques :': 'Téléchargez vos images pour une analyse complète des caractéristiques :',
+        'Téléchargez vos images pour une analyse complète des caractéristiques': 'Téléchargez vos images pour une analyse complète des caractéristiques',
         'Couleurs, Contraste, Contours et Luminance': 'Couleurs, Contraste, Contours et Luminance',
         'Glissez votre image ici': 'Glissez votre image ici',
         'ou cliquez pour sélectionner un fichier': 'ou cliquez pour sélectionner un fichier',
@@ -396,7 +390,7 @@ TRANSLATIONS = {
         'Images Analysées': 'Images Analysées',
         'Taille Totale (MB)': 'Taille Totale (MB)',
         'Espace Économisé (MB)': 'Espace Économisé (MB)',
-        'CO₂ Économisé (g)': 'CO₂ Économisé (g)',
+        'CO2 Économisé (g)': 'CO2 Économisé (g)',
         'Efficacité Énergétique': 'Efficacité Énergétique',
         'Compression Moyenne': 'Compression Moyenne',
         'Stockage Optimisé': 'Stockage Optimisé',
@@ -463,6 +457,8 @@ TRANSLATIONS = {
         'Intensité Max': 'Intensité Max',
         'Niveau de Contraste': 'Niveau de Contraste',
         'Ratio de Contraste': 'Ratio de Contraste',
+        'Contraste RMS': 'Contraste RMS',
+        'Intensité Moyenne': 'Intensité Moyenne',
         'Contraste par Canal': 'Contraste par Canal',
         'Canal Rouge': 'Canal Rouge',
         'Canal Vert': 'Canal Vert',
@@ -550,7 +546,7 @@ TRANSLATIONS = {
         'Statistiques de la Plateforme': 'Platform Statistics',
         
         # Home page
-        'Téléchargez vos images pour une analyse complète des caractéristiques :': 'Upload your images for complete feature analysis:',
+        'Téléchargez vos images pour une analyse complète des caractéristiques': 'Upload your images for complete feature analysis',
         'Couleurs, Contraste, Contours et Luminance': 'Colors, Contrast, Edges and Luminance',
         'Glissez votre image ici': 'Drag your image here',
         'ou cliquez pour sélectionner un fichier': 'or click to select a file',
@@ -564,7 +560,7 @@ TRANSLATIONS = {
         'Images Analysées': 'Analyzed Images',
         'Taille Totale (MB)': 'Total Size (MB)',
         'Espace Économisé (MB)': 'Space Saved (MB)',
-        'CO₂ Économisé (g)': 'CO₂ Saved (g)',
+        'CO2 Économisé (g)': 'CO2 Saved (g)',
         'Efficacité Énergétique': 'Energy Efficiency',
         'Compression Moyenne': 'Average Compression',
         'Stockage Optimisé': 'Optimized Storage',
@@ -631,6 +627,8 @@ TRANSLATIONS = {
         'Intensité Max': 'Max Intensity',
         'Niveau de Contraste': 'Contrast Level',
         'Ratio de Contraste': 'Contrast Ratio',
+        'Contraste RMS': 'RMS Contrast',
+        'Intensité Moyenne': 'Average Intensity',
         'Contraste par Canal': 'Channel Contrast',
         'Canal Rouge': 'Red Channel',
         'Canal Vert': 'Green Channel',

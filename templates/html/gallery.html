@@ -32,9 +32,9 @@
                                     <!-- Delete button (top left, absolute, sober style) -->
                                     <form method="post" action="{{ url_for('delete_image', image_id=image.id) }}" 
                                           style="position: absolute; top: 10px; left: 10px; z-index: 3;"
-                                          onsubmit="return confirm('{{ _('Supprimer cette image ?') }}');">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger p-1" 
-                                                style="border-radius: 50%; background: rgba(0,0,0,0.10); border: none;">
+                                          onsubmit="return confirm('Supprimer cette image ?');">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" 
+                                                style="border-radius: 50%; background: rgba(0,0,0,0.10); border: none; width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center;">
                                             <i class="bi bi-x-lg" style="font-size: 1.1rem;"></i>
                                         </button>
                                     </form>
@@ -42,18 +42,19 @@
                                     <img src="{{ url_for('static', filename='uploads/' + image.filename) }}" 
                                          class="card-img-top gallery-image" 
                                          style="height: 200px; object-fit: cover;"
-                                         onerror="console.log('Failed to load image: {{ image.filename }}'); this.src='{{ url_for('static', filename='images/placeholder.png') }}'; this.alt='Image non disponible';"
+                                         onerror="this.src='/static/images/placeholder.png'"
                                          alt="{{ image.filename }}"
-                                         onload="console.log('Successfully loaded image: {{ image.filename }}');">
+>
+                                    
+                                    <!-- Mode badge (top right, absolute) -->
+                                    <span class="badge badge-glassmorphism" 
+                                          style="position: absolute; top: 10px; right: 10px; z-index: 2;">
+                                        {{ image.image_mode.upper() }}
+                                    </span>
                                     
                                     <div class="card-body d-flex flex-column">
                                         <h6 class="card-title text-truncate">{{ image.filename }}</h6>
-                                        <div class="mb-2">
-                                            <span class="badge badge-glassmorphism">
-                                                {{ image.image_mode.upper() }}
-                                            </span>
-                                        </div>
-                                        <div class="row text-center mb-3">
+                                        <div class="row text-center mb-2">
                                             <div class="col-6">
                                                 <small class="text-muted">{{ _('Taille') }}</small><br>
                                                 <strong>{{ "%.1f"|format(image.file_size_ko) }} Ko</strong>
@@ -65,7 +66,7 @@
                                         </div>
                                         <div class="mt-auto d-flex gap-2">
                                             <a href="{{ url_for('view_analysis', image_id=image.id) }}" 
-                                               class="btn btn-primary btn-sm w-100">
+                                               class="btn btn-secondary btn-sm w-100">
                                                 <i class="bi bi-eye"></i>
                                                 {{ _('Voir l\'Analyse') }}
                                             </a>
@@ -80,7 +81,7 @@
                         <i class="bi bi-images display-1 text-muted mb-3"></i>
                         <h4 class="text-muted">{{ _('Aucune image analysée') }}</h4>
                         <p class="text-muted">{{ _('Commencez par télécharger et analyser votre première image.') }}</p>
-                        <a href="{{ url_for('index') }}" class="btn btn-primary">
+                        <a href="{{ url_for('index') }}#upload-section" class="btn btn-primary">
                             <i class="bi bi-cloud-upload"></i>
                             {{ _('Télécharger une Image') }}
                         </a>
@@ -153,25 +154,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <style>
 .gallery-item {
-    transition: all 0.3s ease;
     position: relative;
 }
 
-.gallery-item:hover {
-    transform: scale(1.02);
-}
-
-.gallery-item:hover .card {
-    border-color: rgba(21, 128, 61, 0.4);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), 0 8px 32px rgba(21, 128, 61, 0.2);
-}
-
 .gallery-image {
-    transition: all 0.3s ease;
-}
-
-.gallery-image:hover {
-    transform: scale(1.02);
+    transition: none;
 }
 </style>
 {% endblock %}
