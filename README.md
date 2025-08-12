@@ -155,6 +155,7 @@ app.run(debug=True)
 
 <img width="1904" height="869" alt="Screenshot 2025-08-12 at 11 56 38 AM" src="https://github.com/user-attachments/assets/7258833f-eec0-486c-a4f1-425e21b48a5a" />
 
+##
 <img width="649" height="865" alt="Screenshot 2025-08-12 at 11 56 54 AM" src="https://github.com/user-attachments/assets/5e86b329-399c-41e4-ab64-c12f9717e3cd" />
 
 ## Trash Maps (Global Visualization 
