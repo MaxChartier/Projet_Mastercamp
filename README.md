@@ -132,3 +132,42 @@ app.run(debug=True)
 3. Committez (`git commit -am 'Ajout nouvelle fonctionnalité'`)
 4. Push (`git push origin feature/nouvelle-fonctionnalite`)
 5. Créez une Pull Request
+   
+### User Experience Previezs 
+
+## Home Page
+
+<img width="1905" height="869" alt="Screenshot 2025-08-12 at 11 55 46 AM" src="https://github.com/user-attachments/assets/5436f27f-d9b6-4aff-b8d9-86a3a1a34744" />
+
+## Details & Upload Feature 
+
+<img width="402" height="763" alt="Screenshot 2025-08-12 at 11 56 15 AM" src="https://github.com/user-attachments/assets/cad64e33-50ac-449e-b839-65110764ce97" />
+
+## Glassmorphism Navigation Bar
+
+<img width="1029" height="74" alt="Screenshot 2025-08-12 at 11 56 01 AM" src="https://github.com/user-attachments/assets/1cd6f48a-440d-42e9-893b-3b561b530fa9" />
+
+## Gallery of Uploads 
+
+<img width="1915" height="864" alt="Screenshot 2025-08-12 at 11 56 26 AM" src="https://github.com/user-attachments/assets/1272a5cd-1a3f-4d7a-8ef2-5eb04c08e57b" />
+
+## Details & Analysis
+
+<img width="1904" height="869" alt="Screenshot 2025-08-12 at 11 56 38 AM" src="https://github.com/user-attachments/assets/7258833f-eec0-486c-a4f1-425e21b48a5a" />
+
+<img width="649" height="865" alt="Screenshot 2025-08-12 at 11 56 54 AM" src="https://github.com/user-attachments/assets/5e86b329-399c-41e4-ab64-c12f9717e3cd" />
+
+## Trash Maps (Global Visualization 
+
+<img width="1060" height="776" alt="Screenshot 2025-08-12 at 11 57 08 AM" src="https://github.com/user-attachments/assets/948fde23-2e53-4b7e-a9cc-7ff3ae064309" />
+
+## Mobile Version
+
+<img width="377" height="798" alt="Screenshot 2025-08-12 at 12 01 08 PM" src="https://github.com/user-attachments/assets/794438ff-f9ce-4a57-b377-4748eb02578d" />
+
+## Language Switch EN/FR
+
+<img width="373" height="802" alt="Screenshot 2025-08-12 at 12 02 10 PM" src="https://github.com/user-attachments/assets/9f24287d-0bdc-43d7-aecf-dcadf7ecec02" />
+
+
+
